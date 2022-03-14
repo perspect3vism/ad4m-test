@@ -58,7 +58,13 @@ export function createExpression(content: string) {
     { encoding: 'utf-8' }
   );
 
-  return JSON.parse(response);
+  const lines = response.split('\n')
+  lines.splice(0, 1);
+  const cleaned = lines.join('\n')
+
+  console.log('response', cleaned.replace(/'/gm, "").trim())
+
+  return cleaned.replace(/'/gm, "").trim();
 }
 
 export function getExpression(url: string) {

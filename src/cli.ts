@@ -16,9 +16,9 @@ import { resolve as resolvePath} from 'path'
 import { cleanOutput } from './utils.js';
 
 const ad4mHost= {
-  linux: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.3/ad4m-linux-x64",
-  mac: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.3/ad4m-macos-x64",
-  windows: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.3/ad4m-windows-x64.exe"
+  linux: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.4/ad4m-linux-x64",
+  mac: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.4/ad4m-macos-x64",
+  windows: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.4/ad4m-windows-x64.exe"
 }
 
 async function getAd4mHostBinary(relativePath: string) {
@@ -98,6 +98,65 @@ const execRun = (cmd: string) => {
   })
 }
 
+async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageTye: string, file: any, resolve: any) {
+  console.log('arr 3')
+  console.log(execSync(`${binaryPath} runtime getTrustedAgents`, { encoding: 'utf-8' }))
+  const a = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
+  console.log('arr 4', a![0])
+  const did =  a![0];
+  console.log(execSync(`${binaryPath} runtime getTrustedAgents`, { encoding: 'utf-8' }))
+  console.log('me', execSync(`${binaryPath} agent me`, { encoding: 'utf-8' }))
+  // const hello = execSync(`${binaryPath} runtime addTrustedAgent --did "${did}"`, { encoding: 'utf-8' })
+  console.log(execSync(`${binaryPath} runtime getTrustedAgents`, { encoding: 'utf-8' }))
+  // const b = execSync(`${binaryPath} agent unlock --passphrase 123456789`, { encoding: 'utf-8' })
+  // console.log('arr 5', hello)
+  const command = `${binaryPath} languages publish --path ${resolvePath(bundle)} --meta '${meta}'`;
+  console.log('arr 6', command)
+  try {
+    
+    const languageAddress = cleanOutput(execSync(command, { encoding: 'utf-8' }))
+    console.log('languageAddress', languageAddress)
+    const hello = execSync(`${binaryPath} runtime addTrustedAgent --did "${languageAddress.author}"`, { encoding: 'utf-8' })
+    console.log(execSync(`${binaryPath} runtime getTrustedAgents`, { encoding: 'utf-8' }))
+    
+    const newCommand = `${binaryPath} languages applyTemplateAndPublish --address ${languageAddress.address} --templateData '{"uid":"123","name":"test-sdp-expression"}'`
+    const newLanguageAddress = cleanOutput(execSync(newCommand, { encoding: 'utf-8' }))
+    console.log('newLanguageAddress', newLanguageAddress)
+    // @ts-ignore
+    global.languageAddress = newLanguageAddress.address;
+
+    console.log('arr language', newLanguageAddress)
+  } catch (err) {
+    console.log('error', err)
+  }
+  
+  const perspective = cleanOutput(execSync(`${binaryPath} perspective add --name "Test perspective"`, { encoding: 'utf-8' }))
+  console.log('ttt', perspective.uuid, typeof perspective)
+
+  // @ts-ignore
+  global.perspective = perspective.uuid;
+
+  if (languageTye === 'linkLanguage') {       
+    // const neighnourhood = execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective} --address "${languageAddress}" --meta '{"links":[]}`)
+    // @ts-ignore
+    global.neighnourhood = neighnourhood;
+  }
+
+  console.log('arr 7', fs.realpathSync(file))
+
+  await import(fs.realpathSync(file));
+
+  console.log('arr 8')
+
+  console.log('pid', child.pid!)
+
+  kill(child.pid!, 'SIGKILL')
+  await findAndKillProcess('holochain')
+  await findAndKillProcess('lair-keystore')
+
+  resolve(null);
+}
+
 
 function startServer(relativePath: string, bundle: string, meta: string, languageTye: string, file: string): Promise<any> {
   console.log('arr -1')
@@ -121,60 +180,9 @@ function startServer(relativePath: string, bundle: string, meta: string, languag
     console.log('arr 2')
 
     child.stdout.on('data', async (data) => {
-      // console.log(data.toString())
-    })
-
-    child.stdout.on('data', async (data) => {
       if (data.toString().includes('AD4M init complete')) {
-        console.log('arr 3')
-        const a = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
-        console.log('arr 4', a![0])
-        const did =  a![0];
-
-        const hello = execSync(`${binaryPath} runtime addTrustedAgent --did "${did}"`, { encoding: 'utf-8' })
-        // const b = execSync(`${binaryPath} agent unlock --passphrase 123456789`, { encoding: 'utf-8' })
-        console.log('arr 5', hello)
-        const command = `${binaryPath} languages publish --path ${resolvePath(bundle)} --meta '${meta}'`;
-        console.log('arr 6', command)
-        try {
-
-          const languageAddress = cleanOutput(execSync(command, { encoding: 'utf-8' }))
-          console.log('languageAddress', languageAddress)
-          // @ts-ignore
-          global.languageAddress = languageAddress.address;
-  
-          console.log('arr language', languageAddress)
-        } catch (err) {
-          console.log('error', err)
-        }
-        
-        const perspective = cleanOutput(execSync(`${binaryPath} perspective add --name "Test perspective"`, { encoding: 'utf-8' }))
-        console.log('ttt', perspective.uuid, typeof perspective)
-
-        // @ts-ignore
-        global.perspective = perspective.uuid;
-
-        if (languageTye === 'linkLanguage') {       
-          // const neighnourhood = execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective} --address "${languageAddress}" --meta '{"links":[]}`)
-          // @ts-ignore
-          global.neighnourhood = neighnourhood;
-        }
-
-        console.log('arr 7', fs.realpathSync(file))
-  
-        await import(fs.realpathSync(file));
-
-        console.log('arr 8')
-
-        console.log('pid', child.pid!)
-
-        kill(child.pid!, 'SIGKILL')
-        await findAndKillProcess('holochain')
-        await findAndKillProcess('lair-keystore')
-
-        resolve(null);
+        installLanguage(child, binaryPath, bundle, meta, languageTye, file, resolve)
       }
-
     });
 
     child.on('error', () => {
