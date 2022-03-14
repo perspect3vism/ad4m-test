@@ -1,4 +1,4 @@
-import { createExpression, getExpression, getAll } from 'ad4m-test/helpers'
+const { createExpression, getExpression, getAll } = require('ad4m-test/helpers')
 
 describe("Expression", () => {
   it("Create Expression", async () => {

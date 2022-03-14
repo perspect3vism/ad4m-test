@@ -8,7 +8,7 @@ import path from 'path';
 import getAppDataPath from 'appdata-path';
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers';
-import { exec, spawn } from 'child_process';
+import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { execSync } from 'child_process';
 import kill from 'tree-kill'
 import findProcess from 'find-process';
@@ -16,9 +16,9 @@ import { resolve as resolvePath} from 'path'
 import { cleanOutput } from './utils.js';
 
 const ad4mHost= {
-  linux: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.4/ad4m-linux-x64",
-  mac: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.4/ad4m-macos-x64",
-  windows: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.4/ad4m-windows-x64.exe"
+  linux: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.5/ad4m-linux-x64",
+  mac: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.5/ad4m-macos-x64",
+  windows: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.5/ad4m-windows-x64.exe"
 }
 
 async function getAd4mHostBinary(relativePath: string) {
@@ -79,67 +79,47 @@ async function findAndKillProcess(processName: string) {
   } 
 }
 
-const execRun = (cmd: string) => {
-  return new Promise((resolve, reject) => {
-    exec(cmd, (error, stdout, stderr) => {
-      if (error) {
-        if (error.code === 1) {
-          // leaks present
-          resolve(stdout);
-        } else {
-          // gitleaks error
-          reject(error);
-        }
-      } else {
-        // no leaks
-        resolve(stdout);
-      }
-    })
-  })
-}
-
-async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageTye: string, file: any, resolve: any) {
+async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageTye: string, file: any, resolve: any, defaultLangPath?: string) {
   console.log('arr 3')
   console.log(execSync(`${binaryPath} runtime getTrustedAgents`, { encoding: 'utf-8' }))
+  
   const a = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
   console.log('arr 4', a![0])
   const did =  a![0];
-  console.log(execSync(`${binaryPath} runtime getTrustedAgents`, { encoding: 'utf-8' }))
-  console.log('me', execSync(`${binaryPath} agent me`, { encoding: 'utf-8' }))
-  // const hello = execSync(`${binaryPath} runtime addTrustedAgent --did "${did}"`, { encoding: 'utf-8' })
-  console.log(execSync(`${binaryPath} runtime getTrustedAgents`, { encoding: 'utf-8' }))
-  // const b = execSync(`${binaryPath} agent unlock --passphrase 123456789`, { encoding: 'utf-8' })
-  // console.log('arr 5', hello)
-  const command = `${binaryPath} languages publish --path ${resolvePath(bundle)} --meta '${meta}'`;
-  console.log('arr 6', command)
-  try {
+
+  if (bundle && meta) {
+    try {    
+      const command = `${binaryPath} languages publish --path ${resolvePath(bundle)} --meta '${meta}'`;
+      console.log('arr 6', command)
+      const languageAddress = cleanOutput(execSync(command, { encoding: 'utf-8' }))
+      console.log('languageAddress', languageAddress)
+     
+      const hello = execSync(`${binaryPath} runtime addTrustedAgent --did "${languageAddress.author}"`, { encoding: 'utf-8' })
+      console.log(execSync(`${binaryPath} runtime getTrustedAgents`, { encoding: 'utf-8' }))
+      
+      const newCommand = `${binaryPath} languages applyTemplateAndPublish --address ${languageAddress.address} --templateData '{"uid":"123","name":"test-sdp-expression"}'`
+      const newLanguageAddress = cleanOutput(execSync(newCommand, { encoding: 'utf-8' }))
+      console.log('newLanguageAddress', newLanguageAddress)
+      // @ts-ignore
+      global.languageAddress = newLanguageAddress.address;
+
+      const perspective = cleanOutput(execSync(`${binaryPath} perspective add --name "Test perspective"`, { encoding: 'utf-8' }))
+      console.log('ttt', perspective.uuid, typeof perspective)
     
-    const languageAddress = cleanOutput(execSync(command, { encoding: 'utf-8' }))
-    console.log('languageAddress', languageAddress)
-    const hello = execSync(`${binaryPath} runtime addTrustedAgent --did "${languageAddress.author}"`, { encoding: 'utf-8' })
-    console.log(execSync(`${binaryPath} runtime getTrustedAgents`, { encoding: 'utf-8' }))
-    
-    const newCommand = `${binaryPath} languages applyTemplateAndPublish --address ${languageAddress.address} --templateData '{"uid":"123","name":"test-sdp-expression"}'`
-    const newLanguageAddress = cleanOutput(execSync(newCommand, { encoding: 'utf-8' }))
-    console.log('newLanguageAddress', newLanguageAddress)
-    // @ts-ignore
-    global.languageAddress = newLanguageAddress.address;
+      // @ts-ignore
+      global.perspective = perspective.uuid;
 
-    console.log('arr language', newLanguageAddress)
-  } catch (err) {
-    console.log('error', err)
-  }
-  
-  const perspective = cleanOutput(execSync(`${binaryPath} perspective add --name "Test perspective"`, { encoding: 'utf-8' }))
-  console.log('ttt', perspective.uuid, typeof perspective)
+      const languages = cleanOutput(execSync(`${binaryPath} languages get --all`, { encoding: 'utf-8' }))
+      console.log('ttt1', languages, typeof languages)
 
-  // @ts-ignore
-  global.perspective = perspective.uuid;
+      const neighnourhood = cleanOutput(execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective.uuid}" --address "${newLanguageAddress.address}" --meta '{"links":[]}'`, { encoding: 'utf-8' }))
 
-  if (languageTye === 'linkLanguage') {       
-    // const neighnourhood = execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective} --address "${languageAddress}" --meta '{"links":[]}`)
-    // @ts-ignore
-    global.neighnourhood = neighnourhood;
+      console.log('ttt1', neighnourhood, typeof neighnourhood)
+      // @ts-ignore
+      global.neighnourhood = neighnourhood;
+    } catch (err) {
+      console.log('error', err)
+    }
   }
 
   console.log('arr 7', fs.realpathSync(file))
@@ -158,7 +138,7 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
 }
 
 
-function startServer(relativePath: string, bundle: string, meta: string, languageTye: string, file: string): Promise<any> {
+function startServer(relativePath: string, bundle: string, meta: string, languageTye: string, file: string, defaultLangPath?: string): Promise<any> {
   console.log('arr -1')
   return new Promise(async (resolve, reject) => {
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
@@ -173,17 +153,32 @@ function startServer(relativePath: string, bundle: string, meta: string, languag
 
     execSync(`${binaryPath} init --dataPath ${relativePath}`, { encoding: 'utf-8' });
 
-    console.log('arr 1')
-  
-    const child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath])
+    console.log('arr 1', resolvePath(defaultLangPath!))
 
-    console.log('arr 2')
+    let child: ChildProcessWithoutNullStreams;
+
+    if (defaultLangPath) {
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--defaultLangPath', resolvePath(defaultLangPath)])
+    } else {
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath])
+    }
+
+    child.stdout.on('data', async (data) => {
+      // console.log(data.toString())
+    });
+    child.stderr.on('data', async (data) => {
+      console.log(data.toString())
+    })
 
     child.stdout.on('data', async (data) => {
       if (data.toString().includes('AD4M init complete')) {
-        installLanguage(child, binaryPath, bundle, meta, languageTye, file, resolve)
+        installLanguage(child, binaryPath, bundle, meta, languageTye, file, resolve, defaultLangPath)
       }
     });
+
+    child.on('exit', () => {
+      console.log('exit is called');
+    })
 
     child.on('error', () => {
       console.log('process error', child.pid)
@@ -226,6 +221,10 @@ async function run() {
         type: 'string',
         describe: '',
         choices: ['directMessage', 'linkLanguage', 'expression']
+      },
+      defaultLangPath: {
+        type: 'string',
+        describe: ''
       }
     })
     .strict()
@@ -260,11 +259,11 @@ async function run() {
   // }
 
   const files = getTestFiles();
-  console.log('haha')  
+  console.log('haha', files)  
 
   if (files) {
     for (const file of files) {
-      const child = await startServer(relativePath, args.bundle!, args.meta!, args.languageTye!, file);
+      const child = await startServer(relativePath, args.bundle!, args.meta!, args.languageTye!, file, args.defaultLangPath);
     }
     console.log('arr 8')
   
