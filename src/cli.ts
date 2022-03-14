@@ -112,13 +112,13 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
       const languages = cleanOutput(execSync(`${binaryPath} languages get --all`, { encoding: 'utf-8' }))
       console.log('ttt1', languages, typeof languages)
 
-      const neighnourhood = cleanOutput(execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective.uuid}" --address "${newLanguageAddress.address}" --meta '{"links":[]}'`, { encoding: 'utf-8' }))
+      // const neighnourhood = cleanOutput(execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective.uuid}" --address "${newLanguageAddress.address}" --meta '{"links":[]}'`, { encoding: 'utf-8' }))
 
-      console.log('ttt1', neighnourhood, typeof neighnourhood)
+      // console.log('ttt1', neighnourhood, typeof neighnourhood)
       // @ts-ignore
-      global.neighnourhood = neighnourhood;
+      // global.neighnourhood = neighnourhood;
     } catch (err) {
-      console.log('error', err)
+      console.log('error 101', err)
     }
   }
 
@@ -130,11 +130,11 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
 
   console.log('pid', child.pid!)
 
-  kill(child.pid!, 'SIGKILL')
-  await findAndKillProcess('holochain')
-  await findAndKillProcess('lair-keystore')
-
-  resolve(null);
+  kill(child.pid!, async () => {
+    await findAndKillProcess('holochain')
+    await findAndKillProcess('lair-keystore')
+    resolve(null);
+  })
 }
 
 
@@ -144,7 +144,7 @@ function startServer(relativePath: string, bundle: string, meta: string, languag
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
     fs.remove(dataPath)
 
-    console.log('arr 0')
+    console.log('arr 0', relativePath)
   
     const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
@@ -153,7 +153,7 @@ function startServer(relativePath: string, bundle: string, meta: string, languag
 
     execSync(`${binaryPath} init --dataPath ${relativePath}`, { encoding: 'utf-8' });
 
-    console.log('arr 1', resolvePath(defaultLangPath!))
+    console.log('arr 1', defaultLangPath)
 
     let child: ChildProcessWithoutNullStreams;
 
@@ -176,14 +176,15 @@ function startServer(relativePath: string, bundle: string, meta: string, languag
       }
     });
 
-    child.on('exit', () => {
-      console.log('exit is called');
+    child.on('exit', (code) => {
+      console.log('exit is called', code);
     })
 
     child.on('error', () => {
       console.log('process error', child.pid)
       findAndKillProcess('holochain')
       findAndKillProcess('lair-keystore')
+      findAndKillProcess('ad4m-host')
       reject()
     });
   });
@@ -224,7 +225,7 @@ async function run() {
       },
       defaultLangPath: {
         type: 'string',
-        describe: ''
+        describe: '',
       }
     })
     .strict()
