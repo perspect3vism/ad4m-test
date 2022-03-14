@@ -2,12 +2,12 @@
   "name": "ad4m-test",
   "version": "1.0.0",
   "license": "MIT",
-  "type": "module",
   "bin": "./build/cli.js",
   "scripts": {
     "build": "tsc",
     "test": "npm run build && node build/cli.js",
     "test-expression": "npm run build && node build/cli.js --bundle \"example/languages/sdp.js\" --meta '{\"name\":\"junto-sdp\",\"description\":\"Shortform expression for flux application\",\"sourceCodeLink\":\"https://github.com/juntofoundation/ad4m-languages\",\"possibleTemplateParams\":[\"uid\",\"name\"]}'",
+    "test-link": "npm run build && node build/cli.js --defaultLangPath ./test-temp/languages --bundle \"example/languages/social-context.js\" --meta '{\"name\":\"social-context\",\"description\":\"Shortform expression for flux application\",\"sourceCodeLink\":\"https://github.com/juntofoundation/ad4m-languages\",\"possibleTemplateParams\":[\"uid\",\"name\"]}'",
     "ad4m-test": "./build/cli.js"
   },
   "preferGlobal": true,
@@ -15,7 +15,7 @@
     "@apollo/client": "^3.5.9",
     "@perspect3vism/ad4m": "0.1.25",
     "appdata-path": "^1.0.0",
-    "chalk": "^5.0.0",
+    "chalk": "4.1.2",
     "esm": "^3.2.25",
     "find-process": "^1.4.7",
     "fs-extra": "^10.0.1",
