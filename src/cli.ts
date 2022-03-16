@@ -14,6 +14,11 @@ import kill from 'tree-kill'
 import findProcess from 'find-process';
 import { resolve as resolvePath} from 'path'
 import { cleanOutput } from './utils.js';
+import chalk from 'chalk';
+const logger = {
+  info: (...args: any[]) => console.log(chalk.blue('[INFO]'),...args),
+  error: (...args: any[]) => console.error(chalk.red('[ERROR]'), ...args)
+}
 
 const ad4mHost= {
   linux: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.5/ad4m-linux-x64",
@@ -28,9 +33,9 @@ async function getAd4mHostBinary(relativePath: string) {
   
     const binaryPath = path.join(getAppDataPath(relativePath), 'binary');
   
-    const isExist = fs.existsSync(path.join(binaryPath, 'ad4m-host'))
-  
-    console.log('isExist', isExist, isMac, isWin)
+    const isExist = fs.existsSync(path.join(binaryPath, 'ad4m-host'));
+
+    logger.info(isExist ? 'ad4m-host binary found': 'ad4m-host binary not found, downloading now...')
   
     if (!isExist) {
       const dest = path.join(binaryPath, 'ad4m-host');
@@ -47,11 +52,12 @@ async function getAd4mHostBinary(relativePath: string) {
 
       download.on('end', async () => {
         await fs.chmodSync(dest, '777');
-        console.log('gg')
+        logger.info('ad4m-host binary downloaded sucessfully')
         resolve(null);
       })
 
       download.on('error', async (err: any) => {
+        logger.error(`Something went wrong while downloading ad4m-host binary: ${err}`)
         reject(err);
       })
     } else {
@@ -62,7 +68,7 @@ async function getAd4mHostBinary(relativePath: string) {
 
 function getTestFiles() {
   const testFiles = glob.sync('**/*.test.js').filter(e => !e.includes('node_modules'))
-  console.log(testFiles)
+  logger.info(testFiles)
 
   return testFiles;
 }
@@ -75,52 +81,44 @@ async function findAndKillProcess(processName: string) {
       kill(p.pid, 'SIGKILL')
     }
   } catch (err) {
-    console.log('No process found')
+    logger.error(`No process found by name: ${processName}`)
   } 
 }
 
-async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageTye: string, file: any, resolve: any, defaultLangPath?: string) {
-  console.log('arr 3')
-  console.log(execSync(`${binaryPath} runtime getTrustedAgents`, { encoding: 'utf-8' }))
-  
-  const a = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
-  console.log('arr 4', a![0])
-  const did =  a![0];
+async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageTye: string, file: any, resolve: any, defaultLangPath?: string) {  
+  const generateAgentResponse = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
+  const currentAgentDid =  generateAgentResponse![0];
+  logger.info(`Current Agent did: ${currentAgentDid}`);
 
   if (bundle && meta) {
     try {    
-      const command = `${binaryPath} languages publish --path ${resolvePath(bundle)} --meta '${meta}'`;
-      console.log('arr 6', command)
-      const languageAddress = cleanOutput(execSync(command, { encoding: 'utf-8' }))
-      console.log('languageAddress', languageAddress)
+      const language = cleanOutput(execSync(`${binaryPath} languages publish --path ${resolvePath(bundle)} --meta '${meta}'`, { encoding: 'utf-8' }))
+      logger.info(`Published language: `, language)
      
-      const hello = execSync(`${binaryPath} runtime addTrustedAgent --did "${languageAddress.author}"`, { encoding: 'utf-8' })
-      console.log(execSync(`${binaryPath} runtime getTrustedAgents`, { encoding: 'utf-8' }))
+      execSync(`${binaryPath} runtime addTrustedAgent --did "${language.author}"`, { encoding: 'utf-8' })
       
-      const newCommand = `${binaryPath} languages applyTemplateAndPublish --address ${languageAddress.address} --templateData '{"uid":"123","name":"test-sdp-expression"}'`
-      const newLanguageAddress = cleanOutput(execSync(newCommand, { encoding: 'utf-8' }))
-      console.log('newLanguageAddress', newLanguageAddress)
+      const templateLanguage = cleanOutput(execSync(`${binaryPath} languages applyTemplateAndPublish --address ${language.address} --templateData '{"uid":"123","name":"test-sdp-expression"}'`, { encoding: 'utf-8' }))
+      logger.info(`Published Template Language: `, templateLanguage)
+
       // @ts-ignore
-      global.languageAddress = newLanguageAddress.address;
+      global.languageAddress = templateLanguage.address;
 
       const perspective = cleanOutput(execSync(`${binaryPath} perspective add --name "Test perspective"`, { encoding: 'utf-8' }))
-      console.log('ttt', perspective.uuid, typeof perspective)
+      logger.info(`Perspective created: `, perspective)
     
       // @ts-ignore
       global.perspective = perspective.uuid;
 
-      const languages = cleanOutput(execSync(`${binaryPath} languages get --all`, { encoding: 'utf-8' }))
-      console.log('ttt1', languages, typeof languages)
-
       if (languageTye === 'link') {
-        const neighnourhood = cleanOutput(execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective.uuid}" --address "${newLanguageAddress.address}" --meta '{"links":[]}'`, { encoding: 'utf-8' }))
-        console.log('ttt1', neighnourhood, typeof neighnourhood)
+        const neighnourhood = cleanOutput(execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective.uuid}" --address "${templateLanguage.address}" --meta '{"links":[]}'`, { encoding: 'utf-8' }))
+        logger.info(`Neighbourhood created: `, neighnourhood)
+        
         // @ts-ignore
         global.neighnourhood = neighnourhood;
       }
 
     } catch (err) {
-      console.log('error', err)
+      logger.error(`Error while installing language or creating neighbourhood: ${err}`)
     }
   }
 
@@ -135,13 +133,10 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
 
 
 function startServer(relativePath: string, bundle: string, meta: string, languageTye: string, file: string, defaultLangPath?: string): Promise<any> {
-  console.log('arr -1')
   return new Promise(async (resolve, reject) => {
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
     fs.remove(dataPath)
 
-    console.log('arr 0', relativePath)
-  
     const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
     await findAndKillProcess('holochain')
@@ -149,7 +144,7 @@ function startServer(relativePath: string, bundle: string, meta: string, languag
 
     execSync(`${binaryPath} init --dataPath ${relativePath}`, { encoding: 'utf-8' });
 
-    console.log('arr 1', defaultLangPath)
+    logger.info('ad4m-test initialized')
 
     let child: ChildProcessWithoutNullStreams;
 
@@ -165,7 +160,6 @@ function startServer(relativePath: string, bundle: string, meta: string, languag
       logFile.write(data)
     });
     child.stderr.on('data', async (data) => {
-      console.log(data.toString())
       logFile.write(data)
     })
 
@@ -176,11 +170,11 @@ function startServer(relativePath: string, bundle: string, meta: string, languag
     });
 
     child.on('exit', (code) => {
-      console.log('exit is called', code);
+      logger.info(`exit is called ${code}`);
     })
 
     child.on('error', () => {
-      console.log('process error', child.pid)
+      logger.error(`process error: ${child.pid}`)
       findAndKillProcess('holochain')
       findAndKillProcess('lair-keystore')
       findAndKillProcess('ad4m-host')
@@ -229,7 +223,7 @@ async function run() {
     })
     .strict()
     .fail((msg, err) => {
-      console.log('Error: ', msg, err);
+      logger.error(`Error: ${msg}, ${err}`);
       process.exit(1);
     })
     .argv;
@@ -240,8 +234,6 @@ async function run() {
   global.relativePath = relativePath;
 
   await getAd4mHostBinary(relativePath);
-
-  console.log(args)
 
   // if (!args.bundle) {
   //   console.error('bundle param is required')
@@ -259,22 +251,17 @@ async function run() {
   // }
 
   const files = getTestFiles();
-  console.log('haha', files)  
 
   if (files) {
     for (const file of files) {
       const child = await startServer(relativePath, args.bundle!, args.meta!, args.languageTye!, file, args.defaultLangPath);
     }
-    console.log('arr 8')
-  
     showTestsResults();
 
-    console.log('arr 9')
   } else {
-    console.error('No test files found')
+    logger.error('No test files found')
   }
 
-  console.log('arr 8')
   process.exit(0)
 }
 
