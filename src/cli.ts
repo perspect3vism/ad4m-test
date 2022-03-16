@@ -112,23 +112,19 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
       const languages = cleanOutput(execSync(`${binaryPath} languages get --all`, { encoding: 'utf-8' }))
       console.log('ttt1', languages, typeof languages)
 
-      // const neighnourhood = cleanOutput(execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective.uuid}" --address "${newLanguageAddress.address}" --meta '{"links":[]}'`, { encoding: 'utf-8' }))
+      if (languageTye === 'link') {
+        const neighnourhood = cleanOutput(execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective.uuid}" --address "${newLanguageAddress.address}" --meta '{"links":[]}'`, { encoding: 'utf-8' }))
+        console.log('ttt1', neighnourhood, typeof neighnourhood)
+        // @ts-ignore
+        global.neighnourhood = neighnourhood;
+      }
 
-      // console.log('ttt1', neighnourhood, typeof neighnourhood)
-      // @ts-ignore
-      // global.neighnourhood = neighnourhood;
     } catch (err) {
-      console.log('error 101', err)
+      console.log('error', err)
     }
   }
 
-  console.log('arr 7', fs.realpathSync(file))
-
   await import(fs.realpathSync(file));
-
-  console.log('arr 8')
-
-  console.log('pid', child.pid!)
 
   kill(child.pid!, async () => {
     await findAndKillProcess('holochain')
@@ -163,11 +159,14 @@ function startServer(relativePath: string, bundle: string, meta: string, languag
       child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath])
     }
 
+    const logFile = fs.createWriteStream(path.join(__dirname, 'ad4m-test.txt'))
+
     child.stdout.on('data', async (data) => {
-      // console.log(data.toString())
+      logFile.write(data)
     });
     child.stderr.on('data', async (data) => {
       console.log(data.toString())
+      logFile.write(data)
     })
 
     child.stdout.on('data', async (data) => {
