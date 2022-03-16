@@ -16,41 +16,50 @@ export function addLink(link: LinkExpression) {
   const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
   const response = execSync(
-    `${binaryPath} perspective addLink --uuid "${perspective}" --link "${JSON.stringify(link)}"`,
+    `${binaryPath} perspective addLink --uuid "${perspective}" --link "${JSON.stringify(link).replace(/"/g, '\\"')}"`,
     { encoding: 'utf-8' }
   );
 
-  return JSON.parse(response);
+  return cleanOutput(response);
 }
 
 export function removeLink(link: LinkExpression) {
   const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
   const response = execSync(
-    `${binaryPath} perspective removeLink --uuid "${perspective}" --link "${JSON.stringify(link)}"`,
+    `${binaryPath} perspective removeLink --uuid "${perspective}" --link "${JSON.stringify(link).replace(/"/g, '\\"')}"`,
     { encoding: 'utf-8' }
   );
 
-  return JSON.parse(response);
+  return cleanOutput(response);
 }
 
-export function updateLink(link: LinkExpression) {
+export function updateLink(oldLink: LinkExpression, newLink: LinkExpression) {
   const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
   const response = execSync(
-    `${binaryPath} perspective updateLink --uuid "${perspective}" --link "${JSON.stringify(link)}"`,
+    `${binaryPath} perspective updateLink --uuid "${perspective}" --link "${JSON.stringify(oldLink).replace(/"/g, '\\"')}" --newLink "${JSON.stringify(newLink).replace(/"/g, '\\"')}"`,
     { encoding: 'utf-8' }
   );
 
-  return JSON.parse(response);
+  return cleanOutput(response);
 }
 
-export function queryLinks(query: LinkQuery) {}
+export function queryLinks(query: LinkQuery) {
+  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
+
+  const response = execSync(
+    `${binaryPath} perspective queryLinks --uuid "${perspective}" --query "${JSON.stringify(query)}"`,
+    { encoding: 'utf-8' }
+  );
+
+  return cleanOutput(response);
+}
 
 export function addCallback() {}
 
 // * Expression Language
-export function createExpression(content: string) {
+export function createExpression(content: any) {
   const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
   const response = execSync(
@@ -61,8 +70,6 @@ export function createExpression(content: string) {
   const lines = response.split('\n')
   lines.splice(0, 1);
   const cleaned = lines.join('\n')
-
-  console.log('response', cleaned.replace(/'/gm, "").trim())
 
   return cleaned.replace(/'/gm, "").trim();
 }
@@ -75,25 +82,12 @@ export function getExpression(url: string) {
     { encoding: 'utf-8' }
   );
 
-  return JSON.parse(response);
-}
-
-export function getByAuthor() {}
-
-export function getAll() {
-  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
-
-  console.log('binaryPath', binaryPath, perspective)
-
-  const response = execSync(
-    `${binaryPath} perspective queryLinks --uuid "${perspective}" --query "{}"`,
-    { encoding: 'utf-8' }
-  );
-
-  console.log('response', response, cleanOutput(response))
+  console.log('response 101', response)
 
   return cleanOutput(response);
 }
+
+export function getByAuthor() {}
 
 // * Direct Message Language
 export function sendPrivate() {}
