@@ -109,7 +109,7 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
       // @ts-ignore
       global.perspective = perspective.uuid;
 
-      if (languageTye === 'link') {
+      if (languageTye === 'linkLanguage') {
         const neighnourhood = cleanOutput(execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective.uuid}" --address "${templateLanguage.address}" --meta '{"links":[]}'`, { encoding: 'utf-8' }))
         logger.info(`Neighbourhood created: `, neighnourhood)
         
@@ -117,25 +117,28 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
         global.neighnourhood = neighnourhood;
       }
 
+      await func();
+    
+      kill(child.pid!, async () => {
+        await findAndKillProcess('holochain')
+        await findAndKillProcess('lair-keystore')
+        resolve(null);
+      })
     } catch (err) {
-      logger.error(`Error while installing language or creating neighbourhood: ${err}`)
+      logger.error(`Error: ${err}`)
     }
   }
 
-  await func();
-
-  kill(child.pid!, async () => {
-    await findAndKillProcess('holochain')
-    await findAndKillProcess('lair-keystore')
-    resolve(null);
-  })
 }
 
 
 export function startServer(relativePath: string, bundle: string, meta: string, languageTye: string, file: string, defaultLangPath?: string, func?: any): Promise<any> {
   return new Promise(async (resolve, reject) => {
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
-    fs.remove(dataPath)
+    fs.removeSync(dataPath)
+    fs.removeSync('./src/test-temp')
+    fs.mkdirSync(path.join(__dirname, '../src/test-temp'))
+    fs.mkdirSync(path.join(__dirname, '../src/test-temp/languages'))
 
     const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
@@ -236,20 +239,15 @@ async function run() {
 
   await getAd4mHostBinary(relativePath);
 
-  // if (!args.bundle) {
-  //   console.error('bundle param is required')
-  //   process.exit(1);
-  // }
+  if (!args.bundle) {
+    console.error('bundle param is required')
+    process.exit(1);
+  }
 
-  // if (!args.meta) {
-  //   console.error('meta param is required')
-  //   process.exit(1);
-  // }
-
-  // if (!args.languageTye) {
-  //   console.error('languageTye param is required')
-  //   process.exit(1);
-  // }
+  if (!args.meta) {
+    console.error('meta param is required')
+    process.exit(1);
+  }
 
   const files = args.test ? [args.test] : getTestFiles();
 
