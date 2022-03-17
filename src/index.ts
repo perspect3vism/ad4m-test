@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import { startServer } from "./cli";
 
 const beforeEachs: Array<() => void> = [];
 const afterEachs: Array<() => void> = [];
@@ -23,6 +24,8 @@ let currIt: {
   }[]
 } = {};
 
+const tests: any[] = []
+
 function beforeEach(fn: () => void) {
   beforeEachs.push(fn)
 }
@@ -39,7 +42,7 @@ function beforeAll(fn: () => void) {
   beforeAlls.push(fn)
 }
 
-function describe(desc: string, fn: () => void) {
+async function describe(desc: string, fn: () => void) {
   currDesc = {
     it: []
   }
@@ -50,28 +53,44 @@ function describe(desc: string, fn: () => void) {
 
   currDesc.name = desc;
 
-  fn()
+  await fn()
 
   for (const after of afterAlls) {
     after()
   }
 
   stats.push(currDesc)
+
+  // @ts-ignore
+  global.tests = tests;
 }
 
-function it(desc: string, fn: () => void) {
+export async function runtest() {
+  // @ts-ignore
+  for (const test of global.tests) {
+    // @ts-ignore
+    const {relativePath, bundle, meta, languageTye, file, defaultLangPath} = global.config;
+
+    currIt = test;
+
+    await startServer(relativePath, bundle!, meta!, languageTye!, file, defaultLangPath, test.func);
+  }
+}
+
+async function it(desc: string, fn: () => void) {
   totalTests++;
 
   for (const before of beforeEachs) {
     before()
   }
 
-  currIt = {
+  const currIt = {
     name: desc,
-    expects: []
+    expects: [],
+    func: fn
   }
 
-  fn()
+  tests.push(currIt)
   
   for (const after of afterEachs) {
     after()
@@ -85,13 +104,13 @@ function expect(value: any) {
     toBe: function(expected: any) {
       if (value === expected) {
         currIt.expects?.push({
-          name: `expected ${value} toBe ${expected}`,
+          name: `${currIt.name} expected ${value} toBe ${expected}`,
           status: true
         });
         passedTests++;
       } else {
         currIt.expects?.push({
-          name: `expected ${value} toBe ${expected}`,
+          name: `${currIt.name} expected ${value} toBe ${expected}`,
           status: false
         });
         failedTests++;
@@ -100,13 +119,13 @@ function expect(value: any) {
     toEqual: function(expected: any) {
       if (value === expected) {
         currIt.expects?.push({
-          name: `expected ${value} toBe ${expected}`,
+          name: `${currIt.name} expected ${value} toBe ${expected}`,
           status: true
         });
         passedTests++;
       } else {
         currIt.expects?.push({
-          name: `expected ${value} toBe ${expected}`,
+          name: `${currIt.name} expected ${value} toBe ${expected}`,
           status: false
         });
         failedTests++;

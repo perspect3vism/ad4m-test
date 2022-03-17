@@ -2,7 +2,7 @@
 
 import fs from 'fs-extra';
 import glob from 'glob';
-import { showTestsResults } from './index.js';
+import { runtest, showTestsResults } from './index.js';
 import wget from 'wget-improved';
 import path from 'path';
 import getAppDataPath from 'appdata-path';
@@ -21,9 +21,9 @@ const logger = {
 }
 
 const ad4mHost= {
-  linux: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.5/ad4m-linux-x64",
-  mac: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.5/ad4m-macos-x64",
-  windows: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.5/ad4m-windows-x64.exe"
+  linux: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.6/ad4m-linux-x64",
+  mac: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.6/ad4m-macos-x64",
+  windows: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.6/ad4m-windows-x64.exe"
 }
 
 async function getAd4mHostBinary(relativePath: string) {
@@ -85,7 +85,7 @@ async function findAndKillProcess(processName: string) {
   } 
 }
 
-async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageTye: string, file: any, resolve: any, defaultLangPath?: string) {  
+async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageTye: string, file: any, resolve: any, defaultLangPath?: string, func?: any) {  
   const generateAgentResponse = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
   const currentAgentDid =  generateAgentResponse![0];
   logger.info(`Current Agent did: ${currentAgentDid}`);
@@ -122,7 +122,7 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
     }
   }
 
-  await import(fs.realpathSync(file));
+  await func();
 
   kill(child.pid!, async () => {
     await findAndKillProcess('holochain')
@@ -132,7 +132,7 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
 }
 
 
-function startServer(relativePath: string, bundle: string, meta: string, languageTye: string, file: string, defaultLangPath?: string): Promise<any> {
+export function startServer(relativePath: string, bundle: string, meta: string, languageTye: string, file: string, defaultLangPath?: string, func?: any): Promise<any> {
   return new Promise(async (resolve, reject) => {
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
     fs.remove(dataPath)
@@ -165,7 +165,7 @@ function startServer(relativePath: string, bundle: string, meta: string, languag
 
     child.stdout.on('data', async (data) => {
       if (data.toString().includes('AD4M init complete')) {
-        installLanguage(child, binaryPath, bundle, meta, languageTye, file, resolve, defaultLangPath)
+        installLanguage(child, binaryPath, bundle, meta, languageTye, file, resolve, defaultLangPath, func);
       }
     });
 
@@ -254,7 +254,19 @@ async function run() {
 
   if (files) {
     for (const file of files) {
-      const child = await startServer(relativePath, args.bundle!, args.meta!, args.languageTye!, file, args.defaultLangPath);
+      // @ts-ignore
+      global.config = {
+        relativePath,
+        bundle: args.bundle,
+        meta: args.meta,
+        languageType: args.languageTye,
+        file,
+        defaultLangPath: args.defaultLangPath,
+      }
+      
+      await import(fs.realpathSync(file));
+      
+      await runtest()
     }
     showTestsResults();
 
