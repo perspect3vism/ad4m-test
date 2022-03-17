@@ -209,21 +209,24 @@ async function run() {
       },
       meta: {
         type: 'string',
-        describe: 'Meta information for the language to be installed'
+        describe: 'Meta information for the language to be installed',
+        alias: 'm'
       },
       languageTye: {
         type: 'string',
-        describe: '',
+        describe: 'Is the language a link or expression language',
+        alias: 'lt',
         choices: ['directMessage', 'linkLanguage', 'expression']
       },
       defaultLangPath: {
         type: 'string',
-        describe: '',
-        default: './test-temp/languages'
+        describe: 'Local bulid-in language to be used instead of the packaged ones',
+        default: './test-temp/languages',
+        alias: 'dlp'
       },
       hideLogs: {
         type: 'boolean',
-        describe: '',
+        describe: 'Hide the ad4m-test logs',
         default: false,
         alias: 'hl'
       }
