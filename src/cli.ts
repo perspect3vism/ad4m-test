@@ -16,8 +16,8 @@ import { resolve as resolvePath} from 'path'
 import { cleanOutput } from './utils.js';
 import chalk from 'chalk';
 const logger = {
-  info: (...args: any[]) => global.hideLogs ?? console.log(chalk.blue('[INFO]'),...args),
-  error: (...args: any[]) => global.hideLogs ?? console.error(chalk.red('[ERROR]'), ...args)
+  info: (...args: any[]) => !global.hideLogs && console.log(chalk.blue('[INFO]'),...args),
+  error: (...args: any[]) => !global.hideLogs && console.error(chalk.red('[ERROR]'), ...args)
 }
 
 const ad4mHost= {
@@ -100,20 +100,17 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
       const templateLanguage = cleanOutput(execSync(`${binaryPath} languages applyTemplateAndPublish --address ${language.address} --templateData '{"uid":"123","name":"test-sdp-expression"}'`, { encoding: 'utf-8' }))
       logger.info(`Published Template Language: `, templateLanguage)
 
-      // @ts-ignore
       global.languageAddress = templateLanguage.address;
 
       const perspective = cleanOutput(execSync(`${binaryPath} perspective add --name "Test perspective"`, { encoding: 'utf-8' }))
       logger.info(`Perspective created: `, perspective)
     
-      // @ts-ignore
       global.perspective = perspective.uuid;
 
       if (languageTye === 'linkLanguage') {
         const neighnourhood = cleanOutput(execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective.uuid}" --address "${templateLanguage.address}" --meta '{"links":[]}'`, { encoding: 'utf-8' }))
         logger.info(`Neighbourhood created: `, neighnourhood)
         
-        // @ts-ignore
         global.neighnourhood = neighnourhood;
       }
 
@@ -242,7 +239,6 @@ async function run() {
 
   const relativePath = args.relativePath || 'ad4m-test';
 
-  // @ts-ignore
   global.relativePath = relativePath;
 
   await getAd4mHostBinary(relativePath);
@@ -261,7 +257,6 @@ async function run() {
 
   if (files) {
     for (const file of files) {
-      // @ts-ignore
       global.config = {
         relativePath,
         bundle: args.bundle,

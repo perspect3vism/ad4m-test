@@ -61,14 +61,11 @@ async function describe(desc: string, fn: () => void) {
 
   stats.push(currDesc)
 
-  // @ts-ignore
   global.tests = tests;
 }
 
 export async function runtest() {
-  // @ts-ignore
   for (const test of global.tests) {
-    // @ts-ignore
     const { relativePath, bundle, meta, languageType, port, defaultLangPath } = global.config;
 
     currIt = test;
@@ -218,17 +215,10 @@ export function showTestsResults() {
   }
 }
 
-// @ts-ignore
 global.describe = describe;
-// @ts-ignore
 global.it = it;
-// @ts-ignore
 global.expect = expect;
-// @ts-ignore
 global.beforeAll = beforeAll;
-// @ts-ignore
 global.afterAll = afterAll;
-// @ts-ignore
 global.beforeEach = beforeEach;
-// @ts-ignore
 global.afterEach = afterEach;

@@ -4,18 +4,9 @@ import { execSync } from "child_process";
 import path from "path";
 import { cleanOutput } from "../utils.js";
 
-function getGlobalVariable(): {
-  relativePath: string;
-  perspective: string;
-  languageAddress: string;
-} {
-  // @ts-ignore
-  return global;
-}
-
 // * Link Language
 export function addLink(link: LinkExpression) {
-  const { relativePath, perspective } = getGlobalVariable();
+  const { relativePath, perspective } = global;
   const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
   const response = execSync(
@@ -27,7 +18,7 @@ export function addLink(link: LinkExpression) {
 }
 
 export function removeLink(link: LinkExpression) {
-  const { relativePath, perspective } = getGlobalVariable();
+  const { relativePath, perspective } = global;
   const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
   const response = execSync(
@@ -39,7 +30,7 @@ export function removeLink(link: LinkExpression) {
 }
 
 export function updateLink(oldLink: LinkExpression, newLink: LinkExpression) {
-  const { relativePath, perspective } = getGlobalVariable();
+  const { relativePath, perspective } = global;
   const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
   const response = execSync(
@@ -51,7 +42,7 @@ export function updateLink(oldLink: LinkExpression, newLink: LinkExpression) {
 }
 
 export function queryLinks(query: LinkQuery) {
-  const { relativePath, perspective } = getGlobalVariable();
+  const { relativePath, perspective } = global;
 
   const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
@@ -67,7 +58,7 @@ export function addCallback() {}
 
 // * Expression Language
 export function createExpression(content: any) {
-  const { relativePath, languageAddress } = getGlobalVariable();
+  const { relativePath, languageAddress } = global;
   const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
   const response = execSync(
@@ -83,7 +74,7 @@ export function createExpression(content: any) {
 }
 
 export function getExpression(url: string) {
-  const { relativePath } = getGlobalVariable();
+  const { relativePath } = global;
   const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
   const response = execSync(
