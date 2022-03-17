@@ -69,11 +69,11 @@ export async function runtest() {
   // @ts-ignore
   for (const test of global.tests) {
     // @ts-ignore
-    const {relativePath, bundle, meta, languageType, file, defaultLangPath} = global.config;
+    const { relativePath, bundle, meta, languageType, port, defaultLangPath } = global.config;
 
     currIt = test;
 
-    await startServer(relativePath, bundle!, meta!, languageType!, file, defaultLangPath, test.func);
+    await startServer(relativePath, bundle!, meta!, languageType!, port, defaultLangPath, test.func);
   }
 }
 

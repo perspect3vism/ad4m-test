@@ -16,8 +16,8 @@ import { resolve as resolvePath} from 'path'
 import { cleanOutput } from './utils.js';
 import chalk from 'chalk';
 const logger = {
-  info: (...args: any[]) => console.log(chalk.blue('[INFO]'),...args),
-  error: (...args: any[]) => console.error(chalk.red('[ERROR]'), ...args)
+  info: (...args: any[]) => global.hideLogs ?? console.log(chalk.blue('[INFO]'),...args),
+  error: (...args: any[]) => global.hideLogs ?? console.error(chalk.red('[ERROR]'), ...args)
 }
 
 const ad4mHost= {
@@ -85,7 +85,7 @@ async function findAndKillProcess(processName: string) {
   } 
 }
 
-async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageTye: string, file: any, resolve: any, defaultLangPath?: string, func?: any) {  
+async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageTye: string, resolve: any, func?: any) {  
   const generateAgentResponse = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
   const currentAgentDid =  generateAgentResponse![0];
   logger.info(`Current Agent did: ${currentAgentDid}`);
@@ -132,7 +132,7 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
 }
 
 
-export function startServer(relativePath: string, bundle: string, meta: string, languageTye: string, file: string, defaultLangPath?: string, func?: any): Promise<any> {
+export function startServer(relativePath: string, bundle: string, meta: string, languageTye: string, port: number, defaultLangPath?: string, func?: any): Promise<any> {
   return new Promise(async (resolve, reject) => {
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
     fs.removeSync(dataPath)
@@ -152,9 +152,9 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
     let child: ChildProcessWithoutNullStreams;
 
     if (defaultLangPath) {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--defaultLangPath', resolvePath(defaultLangPath)])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--defaultLangPath', resolvePath(defaultLangPath)])
     } else {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString()])
     }
 
     const logFile = fs.createWriteStream(path.join(__dirname, 'ad4m-test.txt'))
@@ -168,7 +168,7 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
 
     child.stdout.on('data', async (data) => {
       if (data.toString().includes('AD4M init complete')) {
-        installLanguage(child, binaryPath, bundle, meta, languageTye, file, resolve, defaultLangPath, func);
+        installLanguage(child, binaryPath, bundle, meta, languageTye, resolve, func);
       }
     });
 
@@ -223,6 +223,12 @@ async function run() {
         type: 'string',
         describe: '',
         default: './test-temp/languages'
+      },
+      hideLogs: {
+        type: 'boolean',
+        describe: '',
+        default: false,
+        alias: 'hl'
       }
     })
     .strict()
@@ -231,6 +237,8 @@ async function run() {
       process.exit(1);
     })
     .argv;
+
+  global.hideLogs = args.hideLogs;
 
   const relativePath = args.relativePath || 'ad4m-test';
 
@@ -259,8 +267,8 @@ async function run() {
         bundle: args.bundle,
         meta: args.meta,
         languageType: args.languageTye,
-        file,
         defaultLangPath: args.defaultLangPath,
+        port: args.port
       }
       
       await import(fs.realpathSync(file));
