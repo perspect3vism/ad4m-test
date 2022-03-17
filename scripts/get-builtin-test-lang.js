@@ -1,7 +1,7 @@
-import fs from "fs-extra";
-import wget from "node-wget-js";
-import { Extract } from "unzipper";
-import { join } from "path";
+const fs = require("fs-extra");
+const wget = require("node-wget-js");
+const { Extract } = require("unzipper");
+const { join } = require("path");
 
 const languages = {
   "agent-expression-store": {
