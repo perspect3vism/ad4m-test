@@ -130,6 +130,68 @@ function expect(value: any) {
         });
         failedTests++;
       }
+    },
+    toBeNull: function() {
+      if (value === null) {
+        currIt.expects?.push({
+          name: `${currIt.name} expected ${value} toBe null`,
+          status: true
+        });
+        passedTests++;
+      } else {
+        currIt.expects?.push({
+          name: `${currIt.name} expected ${value} toBe null`,
+          status: false
+        });
+        failedTests++;
+      }
+    },
+    toBeUndefined: function() {
+      if (value === undefined) {
+        currIt.expects?.push({
+          name: `${currIt.name} expected ${value} toBe undefined`,
+          status: true
+        });
+        passedTests++;
+      } else {
+        currIt.expects?.push({
+          name: `${currIt.name} expected ${value} toBe undefined`,
+          status: false
+        });
+        failedTests++;
+      }
+    },
+    not: {
+      toBeNull: function() {
+        if (value !== null) {
+          currIt.expects?.push({
+            name: `${currIt.name} expected ${value} not toBe null`,
+            status: true
+          });
+          passedTests++;
+        } else {
+          currIt.expects?.push({
+            name: `${currIt.name} expected ${value} not toBe null`,
+            status: false
+          });
+          failedTests++;
+        }
+      },
+      toBeUndefined: function() {
+        if (value !== undefined) {
+          currIt.expects?.push({
+            name: `${currIt.name} expected ${value} not toBe undefined`,
+            status: true
+          });
+          passedTests++;
+        } else {
+          currIt.expects?.push({
+            name: `${currIt.name} expected ${value} not toBe undefined`,
+            status: false
+          });
+          failedTests++;
+        }
+      },
     }
   }
 }
