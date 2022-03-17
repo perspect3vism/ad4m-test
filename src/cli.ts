@@ -219,6 +219,7 @@ async function run() {
       defaultLangPath: {
         type: 'string',
         describe: '',
+        default: './test-temp/languages'
       }
     })
     .strict()
@@ -250,7 +251,7 @@ async function run() {
   //   process.exit(1);
   // }
 
-  const files = getTestFiles();
+  const files = args.test ? [args.test] : getTestFiles();
 
   if (files) {
     for (const file of files) {
