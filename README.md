@@ -38,7 +38,9 @@ describe("Expression", () => {
 
 Then your can run the test like so:
 
-`ad4m-test --test ./expression.test.js --bundle languages/sdp.js --meta '{\"name\":\"shortform-expression\",\"description\":\"Shortform expression for flux application\",\"sourceCodeLink\":\"https://github.com/juntofoundation/ad4m-languages\",\"possibleTemplateParams\":[\"uid\",\"name\"]}'`
+```cli
+ad4m-test --test ./expression.test.js --bundle languages/sdp.js --meta '{\"name\":\"shortform-expression\",\"description\":\"Shortform expression for flux application\",\"sourceCodeLink\":\"https://github.com/juntofoundation/ad4m-languages\",\"possibleTemplateParams\":[\"uid\",\"name\"]}'
+```
 
 
 ### API:
