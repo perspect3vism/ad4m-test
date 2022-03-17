@@ -71,11 +71,9 @@ export function createExpression(content: any) {
   const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
   const response = execSync(
-    `${binaryPath} expression create --address ${languageAddress} --content "${content}"`,
+    `${binaryPath} expression create --address ${languageAddress} --content '${content}'`,
     { encoding: 'utf-8' }
   );
-
-  console.log('response 100', response)
 
   const lines = response.split('\n')
   lines.splice(0, 1);
@@ -92,8 +90,6 @@ export function getExpression(url: string) {
     `${binaryPath} expression get --url "${url}"`,
     { encoding: 'utf-8' }
   );
-
-  console.log('response 101', response)
 
   return cleanOutput(response);
 }
