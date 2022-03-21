@@ -1,5 +1,5 @@
 {
-  "name": "ad4m-test",
+  "name": "@perspect3vism/ad4m-test",
   "version": "0.0.1",
   "license": "MIT",
   "bin": "./build/cli.js",
