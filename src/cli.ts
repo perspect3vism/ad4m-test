@@ -15,6 +15,7 @@ import findProcess from 'find-process';
 import { resolve as resolvePath} from 'path'
 import { cleanOutput } from './utils.js';
 import chalk from 'chalk';
+import process from 'process';
 const logger = {
   info: (...args: any[]) => !global.hideLogs && console.log(chalk.blue('[INFO]'),...args),
   error: (...args: any[]) => !global.hideLogs && console.error(chalk.red('[ERROR]'), ...args)
@@ -133,9 +134,9 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
   return new Promise(async (resolve, reject) => {
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
     fs.removeSync(dataPath)
-    fs.removeSync('./src/test-temp')
-    fs.mkdirSync(path.join(__dirname, '../src/test-temp'))
-    fs.mkdirSync(path.join(__dirname, '../src/test-temp/languages'))
+    fs.removeSync(path.join(process.cwd(), './src/test-temp'))
+    fs.mkdirSync(path.join(process.cwd(), './src/test-temp'))
+    fs.mkdirSync(path.join(process.cwd(), './src/test-temp/languages'))
 
     const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
@@ -149,7 +150,7 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
     let child: ChildProcessWithoutNullStreams;
 
     if (defaultLangPath) {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--defaultLangPath', resolvePath(defaultLangPath)])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--defaultLangPath', defaultLangPath])
     } else {
       child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString()])
     }
@@ -221,7 +222,7 @@ async function run() {
       defaultLangPath: {
         type: 'string',
         describe: 'Local bulid-in language to be used instead of the packaged ones',
-        default: './test-temp/languages',
+        default: path.join(__dirname, './test-temp/languages'),
         alias: 'dlp'
       },
       hideLogs: {
