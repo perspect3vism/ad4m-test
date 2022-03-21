@@ -1,6 +1,6 @@
 {
   "name": "ad4m-test",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "license": "MIT",
   "bin": "./build/cli.js",
   "scripts": {
