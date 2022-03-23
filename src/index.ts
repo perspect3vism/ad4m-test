@@ -94,6 +94,10 @@ async function it(desc: string, fn: () => void) {
   currDesc.it.push(currIt)
 }
 
+function hasValue(obj: any, key: string, value: any) {
+  return obj.hasOwnProperty(key) && obj[key] === value;
+}
+
 function expect(value: any) {
   return {
     toBe: function(expected: any) {
@@ -112,18 +116,36 @@ function expect(value: any) {
       }
     },
     toEqual: function(expected: any) {
-      if (value === expected) {
-        currIt.expects?.push({
-          name: `${currIt.name} expected ${value} toBe ${expected}`,
-          status: true
-        });
-        passedTests++;
+      if (typeof expected === 'function') {
+        const [success, expect] = expected(value);
+        
+        if (success) {
+          currIt.expects?.push({
+            name: `${currIt.name} expected ${JSON.stringify(value)} to contain ${JSON.stringify(expect)}`,
+            status: true
+          });
+          passedTests++;
+        } else {
+          currIt.expects?.push({
+            name: `${currIt.name} expected ${value} to contain ${JSON.stringify(expect)}`,
+            status: false
+          });
+          failedTests++;
+        }
       } else {
-        currIt.expects?.push({
-          name: `${currIt.name} expected ${value} toBe ${expected}`,
-          status: false
-        });
-        failedTests++;
+        if (value === expected) {
+          currIt.expects?.push({
+            name: `${currIt.name} expected ${value} toBe ${expected}`,
+            status: true
+          });
+          passedTests++;
+        } else {
+          currIt.expects?.push({
+            name: `${currIt.name} expected ${value} toBe ${expected}`,
+            status: false
+          });
+          failedTests++;
+        }
       }
     },
     toBeNull: function() {
@@ -187,7 +209,86 @@ function expect(value: any) {
           failedTests++;
         }
       },
+      toEqual: function(expected: any) {
+        if (typeof expected === 'function') {
+          const [success, expect] = expected(value);
+          
+          if (!success) {
+            currIt.expects?.push({
+              name: `${currIt.name} expected ${JSON.stringify(value)} not to contain ${JSON.stringify(expect)}`,
+              status: true
+            });
+            passedTests++;
+          } else {
+            currIt.expects?.push({
+              name: `${currIt.name} expected ${value} not to contain ${JSON.stringify(expect)}`,
+              status: false
+            });
+            failedTests++;
+          }
+        } else {
+          if (value !== expected) {
+            currIt.expects?.push({
+              name: `${currIt.name} expected ${value} toBe ${expected}`,
+              status: true
+            });
+            passedTests++;
+          } else {
+            currIt.expects?.push({
+              name: `${currIt.name} expected ${value} toBe ${expected}`,
+              status: false
+            });
+            failedTests++;
+          }
+        }
+      },
     }
+  }
+}
+
+expect.arrayContaining = (array: any[]) => {
+  return (value: any) => {
+    let success = false;
+
+    const response: any[] = [];
+
+    success = array.every((val: any, index: number) => {
+      if (Array.isArray(value)) {
+        if (typeof val === 'function') {
+          const data = val(value[index]);
+          response.push(data[1])
+
+          return data[0]
+        }
+
+        response.push(val);
+       
+        return value.indexOf(val) !== -1;
+      }
+      
+      if (typeof val === 'function') {
+        const data = val(value);
+
+        response.push(data[1]);
+
+        return data[0]
+      }
+
+      response.push(val);
+       
+      return value.indexOf(val) !== -1;
+    })
+
+    return [success, response]
+  }
+}
+
+expect.objectContaining = (obj: {}) => {
+  return (value: any) => {
+    const success = Object.entries(obj).every(([key, val]) => {
+      return hasValue(value, key, val)
+    })
+    return [success, obj]
   }
 }
 
