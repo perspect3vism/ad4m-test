@@ -47,7 +47,7 @@ export function queryLinks(query: LinkQuery) {
   const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
   const response = execSync(
-    `${binaryPath} perspective queryLinks --uuid "${perspective}" --query "${JSON.stringify(query)}"`,
+    `${binaryPath} perspective queryLinks --uuid "${perspective}" --query '${JSON.stringify(query)}'`,
     { encoding: 'utf-8' }
   );
 
