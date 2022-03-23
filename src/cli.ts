@@ -86,7 +86,7 @@ async function findAndKillProcess(processName: string) {
   } 
 }
 
-async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageTye: string, resolve: any, func?: any) {  
+async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageType: string, resolve: any, func?: any) {  
   const generateAgentResponse = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
   const currentAgentDid =  generateAgentResponse![0];
   logger.info(`Current Agent did: ${currentAgentDid}`);
@@ -98,7 +98,7 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
      
       execSync(`${binaryPath} runtime addTrustedAgent --did "${language.author}"`, { encoding: 'utf-8' })
       
-      const templateLanguage = cleanOutput(execSync(`${binaryPath} languages applyTemplateAndPublish --address ${language.address} --templateData '{"uid":"123","name":"test-sdp-expression"}'`, { encoding: 'utf-8' }))
+      const templateLanguage = cleanOutput(execSync(`${binaryPath} languages applyTemplateAndPublish --address ${language.address} --templateData '{"uid":"123","name":"test-link-language"}'`, { encoding: 'utf-8' }))
       logger.info(`Published Template Language: `, templateLanguage)
 
       global.languageAddress = templateLanguage.address;
@@ -108,7 +108,7 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
     
       global.perspective = perspective.uuid;
 
-      if (languageTye === 'linkLanguage') {
+      if (languageType === 'linkLanguage') {
         const neighnourhood = cleanOutput(execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective.uuid}" --address "${templateLanguage.address}" --meta '{"links":[]}'`, { encoding: 'utf-8' }))
         logger.info(`Neighbourhood created: `, neighnourhood)
         
@@ -130,7 +130,7 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
 }
 
 
-export function startServer(relativePath: string, bundle: string, meta: string, languageTye: string, port: number, defaultLangPath?: string, func?: any): Promise<any> {
+export function startServer(relativePath: string, bundle: string, meta: string, languageType: string, port: number, defaultLangPath?: string, func?: any): Promise<any> {
   return new Promise(async (resolve, reject) => {
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
     fs.removeSync(dataPath)
@@ -166,7 +166,7 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
 
     child.stdout.on('data', async (data) => {
       if (data.toString().includes('AD4M init complete')) {
-        installLanguage(child, binaryPath, bundle, meta, languageTye, resolve, func);
+        installLanguage(child, binaryPath, bundle, meta, languageType, resolve, func);
       }
     });
 
@@ -213,7 +213,7 @@ async function run() {
         describe: 'Meta information for the language to be installed',
         alias: 'm'
       },
-      languageTye: {
+      languageType: {
         type: 'string',
         describe: 'Is the language a link or expression language',
         alias: 'lt',
@@ -265,7 +265,7 @@ async function run() {
         relativePath,
         bundle: args.bundle,
         meta: args.meta,
-        languageType: args.languageTye,
+        languageType: args.languageType,
         defaultLangPath: args.defaultLangPath,
         port: args.port
       }
