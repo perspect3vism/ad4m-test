@@ -86,7 +86,7 @@ async function findAndKillProcess(processName: string) {
   } 
 }
 
-async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageType: string, resolve: any, func?: any) {  
+async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageType: string, resolve: any, test?: any) {  
   const generateAgentResponse = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
   const currentAgentDid =  generateAgentResponse![0];
   logger.info(`Current Agent did: ${currentAgentDid}`);
@@ -115,7 +115,15 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
         global.neighnourhood = neighnourhood;
       }
 
-      await func();
+      for (const before of test.beforeEachs) {
+        await before()
+      }    
+
+      await test.func();
+
+      for (const after of test.afterEachs) {
+        await after()
+      } 
     
       kill(child.pid!, async () => {
         await findAndKillProcess('holochain')
@@ -130,7 +138,7 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
 }
 
 
-export function startServer(relativePath: string, bundle: string, meta: string, languageType: string, port: number, defaultLangPath?: string, func?: any): Promise<any> {
+export function startServer(relativePath: string, bundle: string, meta: string, languageType: string, port: number, defaultLangPath?: string, test?: any): Promise<any> {
   return new Promise(async (resolve, reject) => {
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
     fs.removeSync(dataPath)
@@ -166,7 +174,7 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
 
     child.stdout.on('data', async (data) => {
       if (data.toString().includes('AD4M init complete')) {
-        installLanguage(child, binaryPath, bundle, meta, languageType, resolve, func);
+        installLanguage(child, binaryPath, bundle, meta, languageType, resolve, test);
       }
     });
 

@@ -70,21 +70,19 @@ export async function runtest() {
 
     currIt = test;
 
-    await startServer(relativePath, bundle!, meta!, languageType!, port, defaultLangPath, test.func);
+    await startServer(relativePath, bundle!, meta!, languageType!, port, defaultLangPath, test);
   }
 }
 
 async function it(desc: string, fn: () => void) {
   totalTests++;
 
-  for (const before of beforeEachs) {
-    before()
-  }
-
   const currIt = {
     name: desc,
     expects: [],
-    func: fn
+    func: fn,
+    beforeEachs,
+    afterEachs
   }
 
   tests.push(currIt)
