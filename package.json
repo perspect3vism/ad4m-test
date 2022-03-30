@@ -10,7 +10,8 @@
     "test-expression": "npm run build && node build/cli.js --test ./example/expression.test.js --bundle \"example/languages/sdp.js\" --meta '{\"name\":\"junto-sdp\",\"description\":\"Shortform expression for flux application\",\"sourceCodeLink\":\"https://github.com/juntofoundation/ad4m-languages\",\"possibleTemplateParams\":[\"uid\",\"name\"]}'",
     "test-link": "npm run build && node build/cli.js --test ./example/link.test.js --bundle \"example/languages/social-context.js\" --meta '{\"name\":\"social-context\",\"description\":\"Shortform expression for flux application\",\"sourceCodeLink\":\"https://github.com/juntofoundation/ad4m-languages\",\"possibleTemplateParams\":[\"uid\",\"name\"]}'",
     "ad4m-test": "./build/cli.js",
-    "postinstall": "npm run build && node scripts/get-builtin-test-lang.js"
+    "postinstall": "npm run build && node scripts/get-builtin-test-lang.js && node scripts/prepareBootstrapSeed.js",
+    "prepare": "node scripts/prepareBootstrapSeed.js"
   },
   "preferGlobal": true,
   "dependencies": {
@@ -26,7 +27,7 @@
     "fs-extra": "^10.0.1",
     "glob": "^7.2.0",
     "graphql": "^16.3.0",
-    "node-fetch": "^3.2.3",
+    "node-fetch": "2",
     "node-wget-js": "^1.0.1",
     "subscriptions-transport-ws": "^0.11.0",
     "tree-kill": "^1.2.2",
@@ -36,7 +37,9 @@
     "wget-improved": "^3.3.0",
     "yargs": "^17.3.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/node-fetch": "^2.6.1"
+  },
   "exports": {
     ".": "./build/cli.js",
     "./helpers": "./build/helpers/index.js"

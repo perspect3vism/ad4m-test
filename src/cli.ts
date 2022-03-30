@@ -170,10 +170,12 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
 
     let child: ChildProcessWithoutNullStreams;
 
+    const seedFile = path.join(__dirname, '../bootstrapSeed.json')
+
     if (defaultLangPath) {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--defaultLangPath', defaultLangPath])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--defaultLangPath', defaultLangPath, '--networkBootstrapSeed', seedFile, '--languageLanguageOnly', 'true'])
     } else {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString()])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--networkBootstrapSeed', seedFile, '--languageLanguageOnly', 'true'])
     }
 
     const logFile = fs.createWriteStream(path.join(__dirname, 'ad4m-test.txt'))

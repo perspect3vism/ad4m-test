@@ -36,7 +36,7 @@ const languages = {
 async function main() {
   for (const lang in languages) {
     // const targetDir = fs.readFileSync('./scripts/download-languages-path').toString()
-    const dir = join('build/test-temp/languages', lang)
+    const dir = join('build/languages', lang)
     await fs.ensureDir(dir + "/build");
 
     let url = "";
