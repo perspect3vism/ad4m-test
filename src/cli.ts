@@ -16,6 +16,7 @@ import { resolve as resolvePath} from 'path'
 import { cleanOutput } from './utils.js';
 import chalk from 'chalk';
 import process from 'process';
+import fetch from 'node-fetch';
 const logger = {
   info: (...args: any[]) => !global.hideLogs && console.log(chalk.blue('[INFO]'),...args),
   error: (...args: any[]) => !global.hideLogs && console.error(chalk.red('[ERROR]'), ...args)
@@ -29,6 +30,9 @@ const ad4mHost= {
 
 async function getAd4mHostBinary(relativePath: string) {
   return new Promise(async (resolve, reject) => {
+    const response = await fetch("https://api.github.com/repos/perspect3vism/ad4m-host/releases/latest");
+    const data: any = await response.json();
+
     const isWin = process.platform === "win32";
     const isMac = process.platform === 'darwin';
   
@@ -42,13 +46,22 @@ async function getAd4mHostBinary(relativePath: string) {
       const dest = path.join(binaryPath, 'ad4m-host');
       let download: any;
       await fs.ensureDir(binaryPath);
-
+      
       if (isMac) {
-        download = wget.download(ad4mHost.mac, dest)
+        const link = data.assets.find((e: any) =>
+          e.name.includes("macos")
+        ).browser_download_url;
+        download = wget.download(link, dest)
       } else if(isWin) {
-        download = wget.download(ad4mHost.windows, dest)
+        const link = data.assets.find((e: any) =>
+          e.name.includes("windows")
+        ).browser_download_url;
+        download = wget.download(link, dest)
       } else {
-        download = wget.download(ad4mHost.linux, dest)
+        const link = data.assets.find((e: any) =>
+          e.name.includes("linux")
+        ).browser_download_url;
+        download = wget.download(link, dest)
       }
 
       download.on('end', async () => {
