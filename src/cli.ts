@@ -12,9 +12,10 @@ import kill from 'tree-kill'
 import { resolve as resolvePath} from 'path'
 import { cleanOutput, findAndKillProcess, getAd4mHostBinary, getTestFiles, logger } from './utils.js';
 import process from 'process';
+import { installSystemLanguages } from './installSystemLanguages.js';
 
 
-async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageType: string, resolve: any, test?: any) {  
+async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageType: string, resolve: any, test?: any) { 
   const generateAgentResponse = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
   const currentAgentDid =  generateAgentResponse![0];
   logger.info(`Current Agent did: ${currentAgentDid}`);
@@ -73,11 +74,16 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
     fs.removeSync(path.join(process.cwd(), './src/test-temp'))
     fs.mkdirSync(path.join(process.cwd(), './src/test-temp'))
     fs.mkdirSync(path.join(process.cwd(), './src/test-temp/languages'))
+    
+    await installSystemLanguages(relativePath)
+
+    fs.removeSync(dataPath)
 
     const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
     await findAndKillProcess('holochain')
     await findAndKillProcess('lair-keystore')
+    await findAndKillProcess('ad4m-host')
 
     execSync(`${binaryPath} init --dataPath ${relativePath}`, { encoding: 'utf-8' });
 
@@ -88,9 +94,9 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
     const seedFile = path.join(__dirname, '../bootstrapSeed.json')
 
     if (defaultLangPath) {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--defaultLangPath', defaultLangPath, '--networkBootstrapSeed', seedFile])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--defaultLangPath', defaultLangPath, '--networkBootstrapSeed', seedFile, '--languageLanguageOnly', 'false'])
     } else {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--networkBootstrapSeed', seedFile])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--networkBootstrapSeed', seedFile, '--languageLanguageOnly', 'false'])
     }
 
     const logFile = fs.createWriteStream(path.join(__dirname, 'ad4m-test.txt'))
@@ -221,4 +227,7 @@ async function run() {
   process.exit(0)
 }
 
-run()
+if (require.main === module) {
+  run()
+}
+

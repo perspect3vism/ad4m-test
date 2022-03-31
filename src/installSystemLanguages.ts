@@ -4,6 +4,7 @@ import path from "path";
 import fs from 'fs-extra';
 import { ChildProcessWithoutNullStreams, execSync, spawn } from "child_process";
 import { cleanOutput, findAndKillProcess, getAd4mHostBinary, logger } from "./utils";
+import kill from 'tree-kill'
 
 let seed = {
   trustedAgents: [],
@@ -22,7 +23,7 @@ const languagesToPublish = {
   "perspective-language": {name: "perspective-language", description: "", possibleTemplateParams: ["id", "name", "description"], sourceCodeLink: ""} as LanguageMetaInput,
 }
 
-async function installSystemLanguages(relativePath = 'ad4m-test') {
+export async function installSystemLanguages(relativePath = 'ad4m-test') {
   await getAd4mHostBinary(relativePath);
   
   return new Promise(async (resolve, reject) => {
@@ -91,16 +92,20 @@ async function installSystemLanguages(relativePath = 'ad4m-test') {
         }
         fs.writeFileSync(path.join(__dirname, '../bootstrapSeed.json'), JSON.stringify(seed));
         
-        resolve(null);
-
         logger.info('bootstrapSeed file populated with system language hashes')
 
-        process.exit(0);
+        kill(child.pid!, async () => {
+          await findAndKillProcess('holochain')
+          await findAndKillProcess('lair-keystore')
+          resolve(null);
+        })
+
       }
     });
 
     child.on('exit', (code) => {
-      logger.info(`exit is called ${code}`);
+      logger.info(`exit is called 1 ${code}`);
+      resolve(null);
     })
 
     child.on('error', () => {
@@ -113,4 +118,10 @@ async function installSystemLanguages(relativePath = 'ad4m-test') {
   });
 }
 
-installSystemLanguages();
+if (require.main === module) {
+  installSystemLanguages().then(() => {
+    process.exit(0);
+  }).catch(e => {
+    process.exit(1);
+  });
+}
