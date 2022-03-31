@@ -10,8 +10,8 @@
     "test-expression": "npm run build && node build/cli.js --test ./example/expression.test.js --bundle \"example/languages/sdp.js\" --meta '{\"name\":\"junto-sdp\",\"description\":\"Shortform expression for flux application\",\"sourceCodeLink\":\"https://github.com/juntofoundation/ad4m-languages\",\"possibleTemplateParams\":[\"uid\",\"name\"]}'",
     "test-link": "npm run build && node build/cli.js --test ./example/link.test.js --bundle \"example/languages/social-context.js\" --meta '{\"name\":\"social-context\",\"description\":\"Shortform expression for flux application\",\"sourceCodeLink\":\"https://github.com/juntofoundation/ad4m-languages\",\"possibleTemplateParams\":[\"uid\",\"name\"]}'",
     "ad4m-test": "./build/cli.js",
-    "postinstall": "npm run build && node scripts/get-builtin-test-lang.js && node scripts/prepareBootstrapSeed.js",
-    "prepare": "node scripts/prepareBootstrapSeed.js"
+    "postinstall": "npm run build && node scripts/get-builtin-test-lang.js && npm run prepare",
+    "prepare": "node build/installSystemLanguages.js"
   },
   "preferGlobal": true,
   "dependencies": {
