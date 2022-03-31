@@ -3,7 +3,7 @@ import getAppDataPath from "appdata-path";
 import path from "path";
 import fs from 'fs-extra';
 import { ChildProcessWithoutNullStreams, execSync, spawn } from "child_process";
-import { cleanOutput, findAndKillProcess, logger } from "./utils";
+import { cleanOutput, findAndKillProcess, getAd4mHostBinary, logger } from "./utils";
 
 let seed = {
   trustedAgents: [],
@@ -22,9 +22,10 @@ const languagesToPublish = {
   "perspective-language": {name: "perspective-language", description: "", possibleTemplateParams: ["id", "name", "description"], sourceCodeLink: ""} as LanguageMetaInput,
 }
 
-async function installSystemLanguages() {
+async function installSystemLanguages(relativePath = 'ad4m-test') {
+  await getAd4mHostBinary(relativePath);
+  
   return new Promise(async (resolve, reject) => {
-    const relativePath = 'ad4m-test'
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
     fs.removeSync(dataPath)
     fs.removeSync(path.join(process.cwd(), './src/test-temp'))

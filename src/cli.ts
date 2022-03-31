@@ -1,9 +1,7 @@
 #! /usr/bin/env node
 
 import fs from 'fs-extra';
-import glob from 'glob';
 import { runtest, showTestsResults } from './index.js';
-import wget from 'wget-improved';
 import path from 'path';
 import getAppDataPath from 'appdata-path';
 import yargs from 'yargs'
@@ -12,61 +10,9 @@ import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { execSync } from 'child_process';
 import kill from 'tree-kill'
 import { resolve as resolvePath} from 'path'
-import { cleanOutput, findAndKillProcess, getTestFiles, logger } from './utils.js';
+import { cleanOutput, findAndKillProcess, getAd4mHostBinary, getTestFiles, logger } from './utils.js';
 import process from 'process';
-import fetch from 'node-fetch';
 
-async function getAd4mHostBinary(relativePath: string) {
-  return new Promise(async (resolve, reject) => {
-    const response = await fetch("https://api.github.com/repos/perspect3vism/ad4m-host/releases/latest");
-    const data: any = await response.json();
-
-    const isWin = process.platform === "win32";
-    const isMac = process.platform === 'darwin';
-  
-    const binaryPath = path.join(getAppDataPath(relativePath), 'binary');
-  
-    const isExist = fs.existsSync(path.join(binaryPath, 'ad4m-host'));
-
-    logger.info(isExist ? 'ad4m-host binary found': 'ad4m-host binary not found, downloading now...')
-  
-    if (!isExist) {
-      const dest = path.join(binaryPath, 'ad4m-host');
-      let download: any;
-      await fs.ensureDir(binaryPath);
-      
-      if (isMac) {
-        const link = data.assets.find((e: any) =>
-          e.name.includes("macos")
-        ).browser_download_url;
-        download = wget.download(link, dest)
-      } else if(isWin) {
-        const link = data.assets.find((e: any) =>
-          e.name.includes("windows")
-        ).browser_download_url;
-        download = wget.download(link, dest)
-      } else {
-        const link = data.assets.find((e: any) =>
-          e.name.includes("linux")
-        ).browser_download_url;
-        download = wget.download(link, dest)
-      }
-
-      download.on('end', async () => {
-        await fs.chmodSync(dest, '777');
-        logger.info('ad4m-host binary downloaded sucessfully')
-        resolve(null);
-      })
-
-      download.on('error', async (err: any) => {
-        logger.error(`Something went wrong while downloading ad4m-host binary: ${err}`)
-        reject(err);
-      })
-    } else {
-      resolve(null);
-    }
-  });
-}
 
 async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageType: string, resolve: any, test?: any) {  
   const generateAgentResponse = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
