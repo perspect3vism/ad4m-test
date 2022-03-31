@@ -11,22 +11,10 @@ import { hideBin } from 'yargs/helpers';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { execSync } from 'child_process';
 import kill from 'tree-kill'
-import findProcess from 'find-process';
 import { resolve as resolvePath} from 'path'
-import { cleanOutput } from './utils.js';
-import chalk from 'chalk';
+import { cleanOutput, findAndKillProcess, getTestFiles, logger } from './utils.js';
 import process from 'process';
 import fetch from 'node-fetch';
-const logger = {
-  info: (...args: any[]) => !global.hideLogs && console.log(chalk.blue('[INFO]'),...args),
-  error: (...args: any[]) => !global.hideLogs && console.error(chalk.red('[ERROR]'), ...args)
-}
-
-const ad4mHost= {
-  linux: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.6/ad4m-linux-x64",
-  mac: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.6/ad4m-macos-x64",
-  windows: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.6/ad4m-windows-x64.exe"
-}
 
 async function getAd4mHostBinary(relativePath: string) {
   return new Promise(async (resolve, reject) => {
@@ -78,25 +66,6 @@ async function getAd4mHostBinary(relativePath: string) {
       resolve(null);
     }
   });
-}
-
-function getTestFiles() {
-  const testFiles = glob.sync('**/*.test.js').filter(e => !e.includes('node_modules'))
-  logger.info(testFiles)
-
-  return testFiles;
-}
-
-async function findAndKillProcess(processName: string) {
-  try {
-    const list = await findProcess('name', processName)
-
-    for (const p of list) {      
-      kill(p.pid, 'SIGKILL')
-    }
-  } catch (err) {
-    logger.error(`No process found by name: ${processName}`)
-  } 
 }
 
 async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageType: string, resolve: any, test?: any) {  
@@ -173,9 +142,9 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
     const seedFile = path.join(__dirname, '../bootstrapSeed.json')
 
     if (defaultLangPath) {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--defaultLangPath', defaultLangPath, '--networkBootstrapSeed', seedFile, '--languageLanguageOnly', 'true'])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--defaultLangPath', defaultLangPath, '--networkBootstrapSeed', seedFile])
     } else {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--networkBootstrapSeed', seedFile, '--languageLanguageOnly', 'true'])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--networkBootstrapSeed', seedFile])
     }
 
     const logFile = fs.createWriteStream(path.join(__dirname, 'ad4m-test.txt'))
@@ -245,7 +214,7 @@ async function run() {
       defaultLangPath: {
         type: 'string',
         describe: 'Local bulid-in language to be used instead of the packaged ones',
-        default: path.join(__dirname, './test-temp/languages'),
+        default: path.join(__dirname, './languages'),
         alias: 'dlp'
       },
       hideLogs: {
