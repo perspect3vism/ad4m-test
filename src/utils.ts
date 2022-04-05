@@ -48,7 +48,7 @@ export function getTestFiles() {
 
 export async function getAd4mHostBinary(relativePath: string) {
   return new Promise(async (resolve, reject) => {
-    const response = await fetch("https://api.github.com/repos/perspect3vism/ad4m-host/releases/latest");
+    const response = await fetch("https://api.github.com/repos/perspect3vism/ad4m-host/releases/63062186");
     const data: any = await response.json();
 
     const isWin = process.platform === "win32";
