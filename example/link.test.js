@@ -1,4 +1,4 @@
-const { addLink, updateLink, removeLink, queryLinks } = require('@perspect3vism/ad4m-test')
+const { addLink, updateLink, removeLink, queryLinks } = require('@perspect3vism/ad4m-test/helpers')
 
 describe("Link", () => {
   it("Create Link", async () => {

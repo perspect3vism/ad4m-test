@@ -1,4 +1,4 @@
-const { createExpression, getExpression } = require('@perspect3vism/ad4m-test')
+const { createExpression, getExpression } = require('@perspect3vism/ad4m-test/helpers')
 
 describe("Expression", () => {
   it("Create Expression", async () => {
