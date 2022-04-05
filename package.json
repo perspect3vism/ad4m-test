@@ -1,6 +1,6 @@
 {
   "name": "@perspect3vism/ad4m-test",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Testing library to test ad4m languages",
   "license": "MIT",
   "bin": "./build/cli.js",
@@ -20,6 +20,7 @@
     "@types/node": "^17.0.21",
     "@types/unzipper": "^0.10.5",
     "@types/yargs": "^17.0.8",
+    "@types/node-fetch": "^2.6.1",
     "appdata-path": "^1.0.0",
     "chalk": "4.1.2",
     "esm": "^3.2.25",
@@ -38,7 +39,6 @@
     "yargs": "^17.3.1"
   },
   "devDependencies": {
-    "@types/node-fetch": "^2.6.1"
   },
   "exports": {
     ".": "./build/cli.js",
