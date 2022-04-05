@@ -86,10 +86,6 @@ async function it(desc: string, fn: () => void) {
   }
 
   tests.push(currIt)
-  
-  for (const after of afterEachs) {
-    after()
-  }
 
   currDesc.it.push(currIt)
 }

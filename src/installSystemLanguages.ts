@@ -40,7 +40,7 @@ export async function installSystemLanguages(relativePath = 'ad4m-test') {
     fs.mkdirSync(path.join(__dirname, 'publishedLanguages'))
     fs.mkdirSync(path.join(__dirname, 'publishedNeighbourhood'))
 
-    const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
+    const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${global.ad4mHostVersion}`);
 
     await findAndKillProcess('holochain')
     await findAndKillProcess('lair-keystore')

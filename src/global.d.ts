@@ -5,6 +5,7 @@ declare module globalThis {
   var perspective: string;
   var neighnourhood: string;
   var relativePath: string;
+  var ad4mHostVersion: string;
   var config: {
     relativePath: string;
     bundle: string;
