@@ -71,9 +71,6 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
   return new Promise(async (resolve, reject) => {
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
     fs.removeSync(dataPath)
-    fs.removeSync(path.join(process.cwd(), './src/test-temp'))
-    fs.mkdirSync(path.join(process.cwd(), './src/test-temp'))
-    fs.mkdirSync(path.join(process.cwd(), './src/test-temp/languages'))
     
     await installSystemLanguages(relativePath)
 

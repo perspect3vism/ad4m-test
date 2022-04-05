@@ -14,6 +14,12 @@ let seed = {
   perspectiveLanguage: "",
   neighbourhoodLanguage: "",
   languageLanguageBundle: "",
+  languageLanguageSettings : {
+    storagePath: ""
+  },
+  neighbourhoodLanguageSettings: {
+    storagePath: ""
+  }
 }
 
 const languagesToPublish = {
@@ -29,9 +35,10 @@ export async function installSystemLanguages(relativePath = 'ad4m-test') {
   return new Promise(async (resolve, reject) => {
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
     fs.removeSync(dataPath)
-    fs.removeSync(path.join(process.cwd(), './src/test-temp'))
-    fs.mkdirSync(path.join(process.cwd(), './src/test-temp'))
-    fs.mkdirSync(path.join(process.cwd(), './src/test-temp/languages'))
+    fs.removeSync(path.join(__dirname, 'publishedLanguages'))
+    fs.removeSync(path.join(__dirname, 'publishedNeighbourhood'))
+    fs.mkdirSync(path.join(__dirname, 'publishedLanguages'))
+    fs.mkdirSync(path.join(__dirname, 'publishedNeighbourhood'))
 
     const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
@@ -51,6 +58,9 @@ export async function installSystemLanguages(relativePath = 'ad4m-test') {
     const languageLanguageBundlePath = path.join(__dirname, 'languages', "languages", "build", "bundle.js");
         
     seed['languageLanguageBundle'] = fs.readFileSync(languageLanguageBundlePath).toString();
+    seed['languageLanguageSettings'] = { storagePath: path.join(__dirname, 'publishedLanguages') }
+    seed['neighbourhoodLanguageSettings'] = { storagePath: path.join(__dirname, 'publishedNeighbourhood') }
+
 
     fs.writeFileSync(path.join(__dirname, '../bootstrapSeed.json'), JSON.stringify(seed));
 
@@ -104,7 +114,7 @@ export async function installSystemLanguages(relativePath = 'ad4m-test') {
     });
 
     child.on('exit', (code) => {
-      logger.info(`exit is called 1 ${code}`);
+      logger.info(`exit is called ${code}`);
       resolve(null);
     })
 
