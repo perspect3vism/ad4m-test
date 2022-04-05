@@ -30,13 +30,16 @@ const languages = {
   },
   "direct-message-language": {
     bundle: "https://github.com/perspect3vism/direct-message-language/releases/download/0.0.4/bundle.js"
+  },
+  "perspective-language": {
+    bundle: "https://github.com/perspect3vism/perspective-language/releases/download/0.0.1/bundle.js"
   }
 };
 
 async function main() {
   for (const lang in languages) {
     // const targetDir = fs.readFileSync('./scripts/download-languages-path').toString()
-    const dir = join('build/test-temp/languages', lang)
+    const dir = join('build/languages', lang)
     await fs.ensureDir(dir + "/build");
 
     let url = "";

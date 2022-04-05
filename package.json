@@ -10,11 +10,16 @@
     "test-expression": "npm run build && node build/cli.js --test ./example/expression.test.js --bundle \"example/languages/sdp.js\" --meta '{\"name\":\"junto-sdp\",\"description\":\"Shortform expression for flux application\",\"sourceCodeLink\":\"https://github.com/juntofoundation/ad4m-languages\",\"possibleTemplateParams\":[\"uid\",\"name\"]}'",
     "test-link": "npm run build && node build/cli.js --test ./example/link.test.js --bundle \"example/languages/social-context.js\" --meta '{\"name\":\"social-context\",\"description\":\"Shortform expression for flux application\",\"sourceCodeLink\":\"https://github.com/juntofoundation/ad4m-languages\",\"possibleTemplateParams\":[\"uid\",\"name\"]}'",
     "ad4m-test": "./build/cli.js",
-    "postinstall": "npm run build && node scripts/get-builtin-test-lang.js"
+    "postinstall": "npm run build && node scripts/get-builtin-test-lang.js && npm run prepare",
+    "prepare": "node build/installSystemLanguages.js"
   },
   "preferGlobal": true,
   "dependencies": {
     "@perspect3vism/ad4m": "0.1.25",
+    "@types/fs-extra": "^9.0.13",
+    "@types/node": "^17.0.21",
+    "@types/unzipper": "^0.10.5",
+    "@types/yargs": "^17.0.8",
     "appdata-path": "^1.0.0",
     "chalk": "4.1.2",
     "esm": "^3.2.25",
@@ -22,20 +27,19 @@
     "fs-extra": "^10.0.1",
     "glob": "^7.2.0",
     "graphql": "^16.3.0",
+    "node-fetch": "2",
     "node-wget-js": "^1.0.1",
     "subscriptions-transport-ws": "^0.11.0",
     "tree-kill": "^1.2.2",
+    "ts-node": "^10.5.0",
+    "typescript": "^4.6.2",
     "unzipper": "^0.10.11",
     "wget-improved": "^3.3.0",
-    "yargs": "^17.3.1",
-    "@types/fs-extra": "^9.0.13",
-    "@types/node": "^17.0.21",
-    "@types/unzipper": "^0.10.5",
-    "@types/yargs": "^17.0.8",
-    "typescript": "^4.6.2",
-    "ts-node": "^10.5.0"
+    "yargs": "^17.3.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/node-fetch": "^2.6.1"
+  },
   "exports": {
     ".": "./build/cli.js",
     "./helpers": "./build/helpers/index.js"

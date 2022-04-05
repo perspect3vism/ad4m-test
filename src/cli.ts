@@ -1,9 +1,7 @@
 #! /usr/bin/env node
 
 import fs from 'fs-extra';
-import glob from 'glob';
 import { runtest, showTestsResults } from './index.js';
-import wget from 'wget-improved';
 import path from 'path';
 import getAppDataPath from 'appdata-path';
 import yargs from 'yargs'
@@ -11,82 +9,13 @@ import { hideBin } from 'yargs/helpers';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { execSync } from 'child_process';
 import kill from 'tree-kill'
-import findProcess from 'find-process';
 import { resolve as resolvePath} from 'path'
-import { cleanOutput } from './utils.js';
-import chalk from 'chalk';
+import { cleanOutput, findAndKillProcess, getAd4mHostBinary, getTestFiles, logger } from './utils.js';
 import process from 'process';
-const logger = {
-  info: (...args: any[]) => !global.hideLogs && console.log(chalk.blue('[INFO]'),...args),
-  error: (...args: any[]) => !global.hideLogs && console.error(chalk.red('[ERROR]'), ...args)
-}
+import { installSystemLanguages } from './installSystemLanguages.js';
 
-const ad4mHost= {
-  linux: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.6/ad4m-linux-x64",
-  mac: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.6/ad4m-macos-x64",
-  windows: "https://github.com/fluxsocial/ad4m-host/releases/download/v0.0.6/ad4m-windows-x64.exe"
-}
 
-async function getAd4mHostBinary(relativePath: string) {
-  return new Promise(async (resolve, reject) => {
-    const isWin = process.platform === "win32";
-    const isMac = process.platform === 'darwin';
-  
-    const binaryPath = path.join(getAppDataPath(relativePath), 'binary');
-  
-    const isExist = fs.existsSync(path.join(binaryPath, 'ad4m-host'));
-
-    logger.info(isExist ? 'ad4m-host binary found': 'ad4m-host binary not found, downloading now...')
-  
-    if (!isExist) {
-      const dest = path.join(binaryPath, 'ad4m-host');
-      let download: any;
-      await fs.ensureDir(binaryPath);
-
-      if (isMac) {
-        download = wget.download(ad4mHost.mac, dest)
-      } else if(isWin) {
-        download = wget.download(ad4mHost.windows, dest)
-      } else {
-        download = wget.download(ad4mHost.linux, dest)
-      }
-
-      download.on('end', async () => {
-        await fs.chmodSync(dest, '777');
-        logger.info('ad4m-host binary downloaded sucessfully')
-        resolve(null);
-      })
-
-      download.on('error', async (err: any) => {
-        logger.error(`Something went wrong while downloading ad4m-host binary: ${err}`)
-        reject(err);
-      })
-    } else {
-      resolve(null);
-    }
-  });
-}
-
-function getTestFiles() {
-  const testFiles = glob.sync('**/*.test.js').filter(e => !e.includes('node_modules'))
-  logger.info(testFiles)
-
-  return testFiles;
-}
-
-async function findAndKillProcess(processName: string) {
-  try {
-    const list = await findProcess('name', processName)
-
-    for (const p of list) {      
-      kill(p.pid, 'SIGKILL')
-    }
-  } catch (err) {
-    logger.error(`No process found by name: ${processName}`)
-  } 
-}
-
-async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageType: string, resolve: any, test?: any) {  
+async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageType: string, resolve: any, test?: any) { 
   const generateAgentResponse = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
   const currentAgentDid =  generateAgentResponse![0];
   logger.info(`Current Agent did: ${currentAgentDid}`);
@@ -142,14 +71,16 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
   return new Promise(async (resolve, reject) => {
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
     fs.removeSync(dataPath)
-    fs.removeSync(path.join(process.cwd(), './src/test-temp'))
-    fs.mkdirSync(path.join(process.cwd(), './src/test-temp'))
-    fs.mkdirSync(path.join(process.cwd(), './src/test-temp/languages'))
+    
+    await installSystemLanguages(relativePath)
+
+    fs.removeSync(dataPath)
 
     const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
 
     await findAndKillProcess('holochain')
     await findAndKillProcess('lair-keystore')
+    await findAndKillProcess('ad4m-host')
 
     execSync(`${binaryPath} init --dataPath ${relativePath}`, { encoding: 'utf-8' });
 
@@ -157,10 +88,12 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
 
     let child: ChildProcessWithoutNullStreams;
 
+    const seedFile = path.join(__dirname, '../bootstrapSeed.json')
+
     if (defaultLangPath) {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--defaultLangPath', defaultLangPath])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--defaultLangPath', defaultLangPath, '--networkBootstrapSeed', seedFile, '--languageLanguageOnly', 'false'])
     } else {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString()])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--networkBootstrapSeed', seedFile, '--languageLanguageOnly', 'false'])
     }
 
     const logFile = fs.createWriteStream(path.join(__dirname, 'ad4m-test.txt'))
@@ -230,7 +163,7 @@ async function run() {
       defaultLangPath: {
         type: 'string',
         describe: 'Local bulid-in language to be used instead of the packaged ones',
-        default: path.join(__dirname, './test-temp/languages'),
+        default: path.join(__dirname, './languages'),
         alias: 'dlp'
       },
       hideLogs: {
@@ -291,4 +224,7 @@ async function run() {
   process.exit(0)
 }
 
-run()
+if (require.main === module) {
+  run()
+}
+

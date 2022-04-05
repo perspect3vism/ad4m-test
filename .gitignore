@@ -6,3 +6,5 @@ src/test-temp/languages
 test-temp/languages
 build
 example/src
+bootstrapSeed.json
+ad4m.json
