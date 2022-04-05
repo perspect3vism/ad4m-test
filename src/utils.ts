@@ -46,54 +46,73 @@ export function getTestFiles() {
   return testFiles;
 }
 
+function fileExist(binaryPath: string): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    glob(path.join(binaryPath, `ad4m-host*`), (err, file) => {
+      if (err) {
+        reject(err)
+      }
+      resolve(file)
+    })
+  })
+}
+
 export async function getAd4mHostBinary(relativePath: string) {
   return new Promise(async (resolve, reject) => {
     const response = await fetch("https://api.github.com/repos/perspect3vism/ad4m-host/releases/63062186");
     const data: any = await response.json();
+    const version = data['name'].replace('v', '');
+    global.ad4mHostVersion = version;
 
     const isWin = process.platform === "win32";
     const isMac = process.platform === 'darwin';
   
     const binaryPath = path.join(getAppDataPath(relativePath), 'binary');
-  
-    const isExist = fs.existsSync(path.join(binaryPath, 'ad4m-host'));
 
-    logger.info(isExist ? 'ad4m-host binary found': 'ad4m-host binary not found, downloading now...')
-  
-    if (!isExist) {
-      const dest = path.join(binaryPath, 'ad4m-host');
-      let download: any;
-      await fs.ensureDir(binaryPath);
-      
-      if (isMac) {
-        const link = data.assets.find((e: any) =>
-          e.name.includes("macos")
-        ).browser_download_url;
-        download = wget.download(link, dest)
-      } else if(isWin) {
-        const link = data.assets.find((e: any) =>
-          e.name.includes("windows")
-        ).browser_download_url;
-        download = wget.download(link, dest)
-      } else {
-        const link = data.assets.find((e: any) =>
-          e.name.includes("linux")
-        ).browser_download_url;
-        download = wget.download(link, dest)
-      }
+    const files = await fileExist(binaryPath)
 
-      download.on('end', async () => {
-        await fs.chmodSync(dest, '777');
-        logger.info('ad4m-host binary downloaded sucessfully')
+    for (const file of files) {
+      if (file === path.join(binaryPath, `ad4m-host-${version}`)) {
+        logger.info('ad4m-host binary found')
         resolve(null);
-      })
-
-      download.on('error', async (err: any) => {
-        logger.error(`Something went wrong while downloading ad4m-host binary: ${err}`)
-        reject(err);
-      })
-    } else {
-      resolve(null);
+        return;
+      } else {
+        fs.rmSync(file)
+      }
     }
+
+    logger.info('ad4m-host binary not found, downloading now...')
+
+    const dest = path.join(binaryPath, `ad4m-host-${version}`);
+    let download: any;
+    await fs.ensureDir(binaryPath);
+    
+    if (isMac) {
+      const link = data.assets.find((e: any) =>
+        e.name.includes("macos")
+      ).browser_download_url;
+      download = wget.download(link, dest)
+    } else if(isWin) {
+      const link = data.assets.find((e: any) =>
+        e.name.includes("windows")
+      ).browser_download_url;
+      download = wget.download(link, dest)
+    } else {
+      const link = data.assets.find((e: any) =>
+        e.name.includes("linux")
+      ).browser_download_url;
+      download = wget.download(link, dest)
+    }
+
+    download.on('end', async () => {
+      await fs.chmodSync(dest, '777');
+      logger.info('ad4m-host binary downloaded sucessfully')
+      resolve(null);
+    })
+
+    download.on('error', async (err: any) => {
+      logger.error(`Something went wrong while downloading ad4m-host binary: ${err}`)
+      reject(err);
+    });
   });
 }

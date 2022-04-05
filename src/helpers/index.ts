@@ -6,8 +6,8 @@ import { cleanOutput } from "../utils.js";
 
 // * Link Language
 export function addLink(link: LinkExpression) {
-  const { relativePath, perspective } = global;
-  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
+  const { relativePath, perspective, ad4mHostVersion } = global;
+  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${ad4mHostVersion}`);
 
   const response = execSync(
     `${binaryPath} perspective addLink --uuid "${perspective}" --link "${JSON.stringify(link).replace(/"/g, '\\"')}"`,
@@ -18,8 +18,8 @@ export function addLink(link: LinkExpression) {
 }
 
 export function removeLink(link: LinkExpression) {
-  const { relativePath, perspective } = global;
-  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
+  const { relativePath, perspective, ad4mHostVersion } = global;
+  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${ad4mHostVersion}`);
 
   const response = execSync(
     `${binaryPath} perspective removeLink --uuid "${perspective}" --link "${JSON.stringify(link).replace(/"/g, '\\"')}"`,
@@ -30,8 +30,8 @@ export function removeLink(link: LinkExpression) {
 }
 
 export function updateLink(oldLink: LinkExpression, newLink: LinkExpression) {
-  const { relativePath, perspective } = global;
-  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
+  const { relativePath, perspective, ad4mHostVersion } = global;
+  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${ad4mHostVersion}`);
 
   const response = execSync(
     `${binaryPath} perspective updateLink --uuid "${perspective}" --link "${JSON.stringify(oldLink).replace(/"/g, '\\"')}" --newLink "${JSON.stringify(newLink).replace(/"/g, '\\"')}"`,
@@ -42,9 +42,9 @@ export function updateLink(oldLink: LinkExpression, newLink: LinkExpression) {
 }
 
 export function queryLinks(query: LinkQuery) {
-  const { relativePath, perspective } = global;
+  const { relativePath, perspective, ad4mHostVersion } = global;
 
-  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
+  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${ad4mHostVersion}`);
 
   const response = execSync(
     `${binaryPath} perspective queryLinks --uuid "${perspective}" --query '${JSON.stringify(query)}'`,
@@ -58,8 +58,8 @@ export function addCallback() {}
 
 // * Expression Language
 export function createExpression(content: any) {
-  const { relativePath, languageAddress } = global;
-  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
+  const { relativePath, languageAddress, ad4mHostVersion } = global;
+  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${ad4mHostVersion}`);
 
   const response = execSync(
     `${binaryPath} expression create --address ${languageAddress} --content '${content}'`,
@@ -74,8 +74,8 @@ export function createExpression(content: any) {
 }
 
 export function getExpression(url: string) {
-  const { relativePath } = global;
-  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
+  const { relativePath, ad4mHostVersion } = global;
+  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${ad4mHostVersion}`);
 
   const response = execSync(
     `${binaryPath} expression get --url "${url}"`,

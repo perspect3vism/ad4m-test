@@ -76,7 +76,7 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
 
     fs.removeSync(dataPath)
 
-    const binaryPath = path.join(getAppDataPath(relativePath), 'binary', 'ad4m-host');
+    const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${global.ad4mHostVersion}`);
 
     await findAndKillProcess('holochain')
     await findAndKillProcess('lair-keystore')
