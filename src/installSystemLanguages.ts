@@ -30,8 +30,6 @@ const languagesToPublish = {
 }
 
 export async function installSystemLanguages(relativePath = 'ad4m-test') {
-  await getAd4mHostBinary(relativePath);
-  
   return new Promise(async (resolve, reject) => {
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
     fs.removeSync(dataPath)
@@ -69,7 +67,7 @@ export async function installSystemLanguages(relativePath = 'ad4m-test') {
       child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', '4000', '--languageLanguageOnly', 'true'])
     }
 
-    const logFile = fs.createWriteStream(path.join(__dirname, 'ad4m-test.txt'))
+    const logFile = fs.createWriteStream(path.join(process.cwd(), 'ad4m-test.txt'))
 
     child.stdout.on('data', async (data) => {
       logFile.write(data)
