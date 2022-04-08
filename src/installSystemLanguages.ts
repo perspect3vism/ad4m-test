@@ -45,13 +45,13 @@ export async function installSystemLanguages(relativePath = 'ad4m-test') {
     await findAndKillProcess('holochain')
     await findAndKillProcess('lair-keystore')
 
-    execSync(`${binaryPath} init --dataPath ${relativePath}`, { encoding: 'utf-8' });
+    const seedFile = path.join(__dirname, '../bootstrapSeed.json')
+
+    execSync(`${binaryPath} init --dataPath ${relativePath} --networkBootstrapSeed ${seedFile} --overrideConfig`, { encoding: 'utf-8' });
 
     logger.info('ad4m-test initialized')
 
     let child: ChildProcessWithoutNullStreams;
-
-    const seedFile = path.join(__dirname, '../bootstrapSeed.json')
 
     const defaultLangPath = path.join(__dirname, './languages');
 
@@ -61,13 +61,12 @@ export async function installSystemLanguages(relativePath = 'ad4m-test') {
     seed['languageLanguageSettings'] = { storagePath: path.join(__dirname, 'publishedLanguages') }
     seed['neighbourhoodLanguageSettings'] = { storagePath: path.join(__dirname, 'publishedNeighbourhood') }
 
-
     fs.writeFileSync(path.join(__dirname, '../bootstrapSeed.json'), JSON.stringify(seed));
 
     if (defaultLangPath) {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', '4000', '--defaultLangPath', defaultLangPath, '--networkBootstrapSeed', seedFile, '--languageLanguageOnly', 'true'])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', '4000', '--languageLanguageOnly', 'true'])
     } else {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', '4000', '--networkBootstrapSeed', seedFile, '--languageLanguageOnly', 'true'])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', '4000', '--languageLanguageOnly', 'true'])
     }
 
     const logFile = fs.createWriteStream(path.join(__dirname, 'ad4m-test.txt'))
@@ -85,7 +84,7 @@ export async function installSystemLanguages(relativePath = 'ad4m-test') {
 
         for (const [lang, languageMeta] of Object.entries(languagesToPublish)) {
           const bundlePath = path.join(__dirname, 'languages', lang, 'build', 'bundle.js')
-          const language = cleanOutput(execSync(`${binaryPath} languages publish --path ${bundlePath} --meta '${JSON.stringify(languageMeta)}'`, { encoding: 'utf-8' }))
+          const language = cleanOutput(execSync(`${binaryPath} languages publish --path ${bundlePath} --meta '${JSON.stringify(languageMeta)}'`, { encoding: 'utf-8' }));
           
           if (lang === "agent-expression-store") {
             seed["agentLanguage"] = language.address;

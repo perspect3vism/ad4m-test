@@ -14,7 +14,6 @@ import { cleanOutput, findAndKillProcess, getAd4mHostBinary, getTestFiles, logge
 import process from 'process';
 import { installSystemLanguages } from './installSystemLanguages.js';
 
-
 async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageType: string, resolve: any, test?: any) { 
   const generateAgentResponse = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
   const currentAgentDid =  generateAgentResponse![0];
@@ -26,18 +25,20 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
       logger.info(`Published language: `, language)
      
       execSync(`${binaryPath} runtime addTrustedAgent --did "${language.author}"`, { encoding: 'utf-8' })
+
+      global.languageAddress = language.address;
       
-      const templateLanguage = cleanOutput(execSync(`${binaryPath} languages applyTemplateAndPublish --address ${language.address} --templateData '{"uid":"123","name":"test-link-language"}'`, { encoding: 'utf-8' }))
-      logger.info(`Published Template Language: `, templateLanguage)
-
-      global.languageAddress = templateLanguage.address;
-
-      const perspective = cleanOutput(execSync(`${binaryPath} perspective add --name "Test perspective"`, { encoding: 'utf-8' }))
-      logger.info(`Perspective created: `, perspective)
-    
-      global.perspective = perspective.uuid;
-
       if (languageType === 'linkLanguage') {
+        const templateLanguage = cleanOutput(execSync(`${binaryPath} languages applyTemplateAndPublish --address ${language.address} --templateData '{"uid":"123","name":"test-${language.name}"}'`, { encoding: 'utf-8' }))
+        logger.info(`Published Template Language: `, templateLanguage)
+  
+        global.languageAddress = templateLanguage.address;
+
+        const perspective = cleanOutput(execSync(`${binaryPath} perspective add --name "Test perspective"`, { encoding: 'utf-8' }))
+        logger.info(`Perspective created: `, perspective)
+      
+        global.perspective = perspective.uuid;
+
         const neighnourhood = cleanOutput(execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective.uuid}" --address "${templateLanguage.address}" --meta '{"links":[]}'`, { encoding: 'utf-8' }))
         logger.info(`Neighbourhood created: `, neighnourhood)
         
@@ -82,18 +83,18 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
     await findAndKillProcess('lair-keystore')
     await findAndKillProcess('ad4m-host')
 
-    execSync(`${binaryPath} init --dataPath ${relativePath}`, { encoding: 'utf-8' });
+    const seedFile = path.join(__dirname, '../bootstrapSeed.json')
+
+    execSync(`${binaryPath} init --dataPath ${relativePath} --networkBootstrapSeed ${seedFile} --overrideConfig`, { encoding: 'utf-8' });
 
     logger.info('ad4m-test initialized')
 
     let child: ChildProcessWithoutNullStreams;
 
-    const seedFile = path.join(__dirname, '../bootstrapSeed.json')
-
     if (defaultLangPath) {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--defaultLangPath', defaultLangPath, '--networkBootstrapSeed', seedFile, '--languageLanguageOnly', 'false'])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--languageLanguageOnly', 'false'])
     } else {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--networkBootstrapSeed', seedFile, '--languageLanguageOnly', 'false'])
+      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--languageLanguageOnly', 'false'])
     }
 
     const logFile = fs.createWriteStream(path.join(__dirname, 'ad4m-test.txt'))
