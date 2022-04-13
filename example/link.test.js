@@ -5,7 +5,7 @@ describe("Link", () => {
     const all = await queryLinks({});
 
     expect(all.length).toBe(0)
-    const link = await addLink({source:"root", target:"QmYVsrMpiFmV9S7bTWNAkUzSqjRJskQ8g4TWKKwKrHAPqL://QmSsCCtXMDAZXMpyiNLzwjGEU4hLmhG7fphidhEEodQ4Wy"})
+    const link = await addLink({source:"root", predicate: "soic://test", target:"QmYVsrMpiFmV9S7bTWNAkUzSqjRJskQ8g4TWKKwKrHAPqL://QmSsCCtXMDAZXMpyiNLzwjGEU4hLmhG7fphidhEEodQ4Wy"})
 
     const all1 = await queryLinks({});
 
@@ -19,7 +19,7 @@ describe("Link", () => {
     const all = await queryLinks({});
 
     expect(all.length).toBe(0)
-    const link = await addLink({source:"root", target:"QmYVsrMpiFmV9S7bTWNAkUzSqjRJskQ8g4TWKKwKrHAPqL://QmSsCCtXMDAZXMpyiNLzwjGEU4hLmhG7fphidhEEodQ4Wy"})
+    const link = await addLink({source:"root", predicate: "soic://test", target:"QmYVsrMpiFmV9S7bTWNAkUzSqjRJskQ8g4TWKKwKrHAPqL://QmSsCCtXMDAZXMpyiNLzwjGEU4hLmhG7fphidhEEodQ4Wy"})
 
     const all1 = await queryLinks({});
 
@@ -36,7 +36,7 @@ describe("Link", () => {
     const all = await queryLinks({});
 
     expect(all.length).toBe(0)
-    const link = await addLink({source:"root", target:"QmYVsrMpiFmV9S7bTWNAkUzSqjRJskQ8g4TWKKwKrHAPqL://QmSsCCtXMDAZXMpyiNLzwjGEU4hLmhG7fphidhEEodQ4Wy"})
+    const link = await addLink({source:"root", predicate: "soic://test", target:"QmYVsrMpiFmV9S7bTWNAkUzSqjRJskQ8g4TWKKwKrHAPqL://QmSsCCtXMDAZXMpyiNLzwjGEU4hLmhG7fphidhEEodQ4Wy"})
 
     const all1 = await queryLinks({});
 
@@ -45,7 +45,7 @@ describe("Link", () => {
     expect(all1[0].data.predicate).toBe(link.data.predicate)
     expect(all1[0].data.target).toBe(link.data.target)
 
-    const newLink = await updateLink(link, {source:"root", predicate: "soic://test", target:"QmYVsrMpiFmV9S7bTWNAkUzSqjRJskQ8g4TWKKwKrHAPqL://QmSsCCtXMDAZXMpyiNLzwjGEU4hLmhG7fphidhEEodQ4Wy"})
+    const newLink = await updateLink(link, {source:"root", predicate: "soic://test1", target:"QmYVsrMpiFmV9S7bTWNAkUzSqjRJskQ8g4TWKKwKrHAPqL://QmSsCCtXMDAZXMpyiNLzwjGEU4hLmhG7fphidhEEodQ4Wy"})
   
     const all2 = await queryLinks({});
 
