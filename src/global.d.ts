@@ -13,6 +13,7 @@ declare module globalThis {
     languageType: string | undefined;
     defaultLangPath: string;
     port: number;
+    ui: boolean;
   };
   var tests: any[];
   var describe: (desc: string, fn: () => void) => void;
