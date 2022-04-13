@@ -67,7 +67,7 @@ export async function installSystemLanguages(relativePath = 'ad4m-test') {
       child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', '4000', '--languageLanguageOnly', 'true'])
     }
 
-    const logFile = fs.createWriteStream(path.join(process.cwd(), 'ad4m-test.txt'))
+    const logFile = fs.createWriteStream(path.join(process.cwd(), 'ad4m-test.log'))
 
     child.stdout.on('data', async (data) => {
       logFile.write(data)

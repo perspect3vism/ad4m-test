@@ -105,7 +105,7 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
       child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--languageLanguageOnly', 'false'])
     }
 
-    const logFile = fs.createWriteStream(path.join(process.cwd(), 'ad4m-test.txt'))
+    const logFile = fs.createWriteStream(path.join(process.cwd(), 'ad4m-test.log'))
 
     child.stdout.on('data', async (data) => {
       logFile.write(data)
