@@ -3,7 +3,7 @@ import getAppDataPath from "appdata-path";
 import path from "path";
 import fs from 'fs-extra';
 import { ChildProcessWithoutNullStreams, execSync, spawn } from "child_process";
-import { cleanOutput, findAndKillProcess, getAd4mHostBinary, logger } from "./utils";
+import { cleanOutput, findAndKillProcess, logger } from "./utils";
 import kill from 'tree-kill'
 
 let seed = {
