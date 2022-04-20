@@ -42,6 +42,13 @@ Then your can run the test like so:
 ad4m-test --test ./expression.test.js --bundle languages/sdp.js --meta '{\"name\":\"shortform-expression\",\"description\":\"Shortform expression for flux application\",\"sourceCodeLink\":\"https://github.com/juntofoundation/ad4m-languages\",\"possibleTemplateParams\":[\"uid\",\"name\"]}'
 ```
 
+### ExpressionUI testing
+
+Running the below command will start a local server which will host the ExpressionUI which can be used to test UI for the expression language.
+
+```cli
+ad4m-test --ui --bundle languages/sdp.js --meta '{\"name\":\"shortform-expression\",\"description\":\"Shortform expression for flux application\",\"sourceCodeLink\":\"https://github.com/juntofoundation/ad4m-languages\",\"possibleTemplateParams\":[\"uid\",\"name\"]}'
+```
 
 ### API:
 
@@ -55,6 +62,7 @@ ad4m-test --test ./expression.test.js --bundle languages/sdp.js --meta '{\"name\
 - `languageTye | lt` - Is the language a link or expression language
 - `defaultLangPath | dlp` - Local bulid-in language to be used instead of the packaged ones
 - `hideLogs | hl` - Hide the ad4m-test logs
+- `ui` - Starts a local server with expressionUI loaded for testing.
 
 **Helpers:**
 - `addLink(link: LinkExpression)` - Adds link and returns added link.
