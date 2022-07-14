@@ -6,7 +6,7 @@ import wget from 'wget-improved';
 import fetch from 'node-fetch';
 import path from "path";
 import fs from 'fs-extra';
-import getAppDataPath from "appdata-path";
+import { homedir } from "os";
 
 export const logger = {
   info: (...args: any[]) => !global.hideLogs && console.log(chalk.blue('[INFO]'),...args),
@@ -59,7 +59,7 @@ function fileExist(binaryPath: string): Promise<string[]> {
 
 export async function getAd4mHostBinary(relativePath: string) {
   return new Promise(async (resolve, reject) => {
-    const response = await fetch("https://api.github.com/repos/perspect3vism/ad4m-host/releases/63966938");
+    const response = await fetch("https://api.github.com/repos/perspect3vism/ad4m-host/releases/71753984");
     const data: any = await response.json();
     const version = data['name'].replace('v', '');
     global.ad4mHostVersion = version;
@@ -67,7 +67,7 @@ export async function getAd4mHostBinary(relativePath: string) {
     const isWin = process.platform === "win32";
     const isMac = process.platform === 'darwin';
   
-    const binaryPath = path.join(getAppDataPath(relativePath), 'binary');
+    const binaryPath = path.join(ad4mDataDirectory(relativePath), 'binary');
 
     const files = await fileExist(binaryPath)
 
@@ -115,4 +115,26 @@ export async function getAd4mHostBinary(relativePath: string) {
       reject(err);
     });
   });
+}
+
+export function ad4mDataDirectory(override?: string) {
+  if (override)
+    return path.join(homedir(), override)
+  else
+    return path.join(homedir(), '.ad4m')
+}
+
+export function deleteAllAd4mData(relativePath: string) {
+  const dataPath = ad4mDataDirectory(relativePath)
+
+  const files = fs.readdirSync(dataPath);
+
+  
+  for (const file of files) {
+    const fileDir = path.join(ad4mDataDirectory(relativePath), './', file);
+    
+    if (file !== 'binary') {
+      fs.removeSync(fileDir);
+    }
+  }
 }

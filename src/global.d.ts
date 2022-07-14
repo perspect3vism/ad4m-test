@@ -6,6 +6,7 @@ declare module globalThis {
   var neighnourhood: string;
   var relativePath: string;
   var ad4mHostVersion: string;
+  var ad4mToken: string;
   var config: {
     relativePath: string;
     bundle: string;

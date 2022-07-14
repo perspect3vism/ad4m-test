@@ -1,93 +1,68 @@
-import { LinkExpression, LinkQuery } from "@perspect3vism/ad4m";
-import getAppDataPath from "appdata-path";
-import { execSync } from "child_process";
-import path from "path";
-import { cleanOutput } from "../utils.js";
+import { Link, LinkExpression, LinkQuery } from "@perspect3vism/ad4m";
+import { buildAd4mClient } from "../client.js";
 
 // * Link Language
-export function addLink(link: LinkExpression) {
-  const { relativePath, perspective, ad4mHostVersion } = global;
-  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${ad4mHostVersion}`);
+export async function addLink(link: Link) {
+  const { perspective } = global;
 
-  const response = execSync(
-    `${binaryPath} perspective addLink --uuid "${perspective}" --link "${JSON.stringify(link).replace(/"/g, '\\"')}"`,
-    { encoding: 'utf-8' }
-  );
+  const client = await buildAd4mClient();
 
-  return cleanOutput(response);
+  const response = await client.perspective.addLink(perspective, link);
+
+  return response;
 }
 
-export function removeLink(link: LinkExpression) {
-  const { relativePath, perspective, ad4mHostVersion } = global;
-  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${ad4mHostVersion}`);
+export async function removeLink(link: LinkExpression) {
+  const { perspective } = global;
+  
+  const client = await buildAd4mClient();
 
-  const response = execSync(
-    `${binaryPath} perspective removeLink --uuid "${perspective}" --link "${JSON.stringify(link).replace(/"/g, '\\"')}"`,
-    { encoding: 'utf-8' }
-  );
+  const response = await client.perspective.removeLink(perspective, link);
 
-  return cleanOutput(response);
+  return response;
 }
 
-export function updateLink(oldLink: LinkExpression, newLink: LinkExpression) {
-  const { relativePath, perspective, ad4mHostVersion } = global;
-  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${ad4mHostVersion}`);
+export async function updateLink(oldLink: LinkExpression, newLink: Link) {
+  const { perspective } = global;
+  
+  const client = await buildAd4mClient();
 
-  const response = execSync(
-    `${binaryPath} perspective updateLink --uuid "${perspective}" --link "${JSON.stringify(oldLink).replace(/"/g, '\\"')}" --newLink "${JSON.stringify(newLink).replace(/"/g, '\\"')}"`,
-    { encoding: 'utf-8' }
-  );
+  const response = await client.perspective.updateLink(perspective, oldLink, newLink);
 
-  return cleanOutput(response);
+  return response;
 }
 
-export function queryLinks(query: LinkQuery) {
-  const { relativePath, perspective, ad4mHostVersion } = global;
+export async function queryLinks(query: LinkQuery) {
+  const { perspective } = global;
+  
+  const client = await buildAd4mClient();
 
-  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${ad4mHostVersion}`);
+  const response = await client.perspective.queryLinks(perspective, query);
 
-  const response = execSync(
-    `${binaryPath} perspective queryLinks --uuid "${perspective}" --query '${JSON.stringify(query)}'`,
-    { encoding: 'utf-8' }
-  );
-
-  return cleanOutput(response);
+  return response;
 }
 
-export function addCallback() {}
+export async function addCallback() {}
 
 // * Expression Language
-export function createExpression(content: any) {
-  const { relativePath, languageAddress, ad4mHostVersion } = global;
-  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${ad4mHostVersion}`);
+export async function createExpression(content: any) {
+  const client = await buildAd4mClient();
 
-  const response = execSync(
-    `${binaryPath} expression create --address ${languageAddress} --content '${content}'`,
-    { encoding: 'utf-8' }
-  );
+  const response = await client.expression.create(content, languageAddress);
 
-  const lines = response.split('\n')
-  lines.splice(0, 1);
-  const cleaned = lines.join('\n')
-
-  return cleaned.replace(/'/gm, "").trim();
+  return response;
 }
 
-export function getExpression(url: string) {
-  const { relativePath, ad4mHostVersion } = global;
-  const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${ad4mHostVersion}`);
+export async function getExpression(url: string) {
+  const client = await buildAd4mClient();
 
-  const response = execSync(
-    `${binaryPath} expression get --url "${url}"`,
-    { encoding: 'utf-8' }
-  );
-
-  return cleanOutput(response);
+  const response = await client.expression.get(url);
+  return response;
 }
 
-export function getByAuthor() {}
+export async function getByAuthor() {}
 
 // * Direct Message Language
-export function sendPrivate() {}
+export async function sendPrivate() {}
 
-export function inbox() {}
+export async function inbox() {}

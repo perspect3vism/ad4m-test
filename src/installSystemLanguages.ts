@@ -1,10 +1,10 @@
 import { LanguageMetaInput } from "@perspect3vism/ad4m"
-import getAppDataPath from "appdata-path";
 import path from "path";
 import fs from 'fs-extra';
 import { ChildProcessWithoutNullStreams, execSync, spawn } from "child_process";
-import { cleanOutput, findAndKillProcess, logger } from "./utils";
+import { ad4mDataDirectory, deleteAllAd4mData, findAndKillProcess, getAd4mHostBinary, logger } from "./utils";
 import kill from 'tree-kill'
+import { buildAd4mClient } from "./client";
 
 let seed = {
   trustedAgents: [],
@@ -29,16 +29,20 @@ const languagesToPublish = {
   "perspective-language": {name: "perspective-language", description: "", possibleTemplateParams: ["id", "name", "description"], sourceCodeLink: ""} as LanguageMetaInput,
 }
 
-export async function installSystemLanguages(relativePath = 'ad4m-test') {
+export async function installSystemLanguages(relativePath = '') {
   return new Promise(async (resolve, reject) => {
-    const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
-    fs.removeSync(dataPath)
+    deleteAllAd4mData(relativePath);
     fs.removeSync(path.join(__dirname, 'publishedLanguages'))
     fs.removeSync(path.join(__dirname, 'publishedNeighbourhood'))
     fs.mkdirSync(path.join(__dirname, 'publishedLanguages'))
     fs.mkdirSync(path.join(__dirname, 'publishedNeighbourhood'))
 
-    const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${global.ad4mHostVersion}`);
+    let binaryPath = path.join(ad4mDataDirectory(relativePath), 'binary', `ad4m-host-${global.ad4mHostVersion}`);
+
+    if (!fs.existsSync(binaryPath)) {
+      await getAd4mHostBinary(relativePath);
+      binaryPath = path.join(ad4mDataDirectory(relativePath), 'binary', `ad4m-host-${global.ad4mHostVersion}`);
+    }
 
     await findAndKillProcess('holochain')
     await findAndKillProcess('lair-keystore')
@@ -62,10 +66,12 @@ export async function installSystemLanguages(relativePath = 'ad4m-test') {
     fs.writeFileSync(path.join(__dirname, '../bootstrapSeed.json'), JSON.stringify(seed));
 
     if (defaultLangPath) {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', '4000', '--languageLanguageOnly', 'true'])
+      child = spawn(`${binaryPath}`, ['serve', '--reqCredential', global.ad4mToken ,'--dataPath', relativePath, '--port', '4000', '--languageLanguageOnly', 'true'])
     } else {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', '4000', '--languageLanguageOnly', 'true'])
+      child = spawn(`${binaryPath}`, ['serve', '--reqCredential', global.ad4mToken, '--dataPath', relativePath, '--port', '4000', '--languageLanguageOnly', 'true'])
     }
+
+    const client = await buildAd4mClient();
 
     const logFile = fs.createWriteStream(path.join(process.cwd(), 'ad4m-test.log'))
 
@@ -77,12 +83,12 @@ export async function installSystemLanguages(relativePath = 'ad4m-test') {
     })
 
     child.stdout.on('data', async (data) => {
-      if (data.toString().includes('AD4M init complete')) {
-        execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
+      if (data.toString().includes('GraphQL server started, Unlock the agent to start holohchain')) {
+        await client.agent.generate('123456789')
 
         for (const [lang, languageMeta] of Object.entries(languagesToPublish)) {
           const bundlePath = path.join(__dirname, 'languages', lang, 'build', 'bundle.js')
-          const language = cleanOutput(execSync(`${binaryPath} languages publish --path ${bundlePath} --meta '${JSON.stringify(languageMeta)}'`, { encoding: 'utf-8' }));
+          const language = await client.languages.publish(bundlePath, languageMeta);
           
           if (lang === "agent-expression-store") {
             seed["agentLanguage"] = language.address;

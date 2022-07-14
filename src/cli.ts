@@ -3,53 +3,52 @@
 import fs from 'fs-extra';
 import { runtest, showTestsResults } from './index.js';
 import path from 'path';
-import getAppDataPath from 'appdata-path';
+import { v4 as uuidv4 } from 'uuid';
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { execSync } from 'child_process';
 import kill from 'tree-kill'
 import { resolve as resolvePath} from 'path'
-import { cleanOutput, findAndKillProcess, getAd4mHostBinary, getTestFiles, logger } from './utils.js';
+import { ad4mDataDirectory, cleanOutput, deleteAllAd4mData, findAndKillProcess, getAd4mHostBinary, getTestFiles, logger } from './utils.js';
 import process from 'process';
 import { installSystemLanguages } from './installSystemLanguages.js';
 import { buildAd4mClient } from './client.js';
-import { WebSocket } from 'ws';
 import express from 'express'
 
 async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageType: string, resolve: any, callback?: any) { 
-  const generateAgentResponse = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
-  const currentAgentDid =  generateAgentResponse![0];
+  const ad4mClient = await buildAd4mClient();
+
+  const generateAgentResponse = await ad4mClient.agent.generate('123456789');
+  const currentAgentDid =  generateAgentResponse.did;
   logger.info(`Current Agent did: ${currentAgentDid}`);
 
   const { ui } = global.config;
  
   if (bundle && meta) {
     try {    
-      const ad4mClient = await buildAd4mClient(WebSocket);
- 
-      const language = cleanOutput(execSync(`${binaryPath} languages publish --path ${resolvePath(bundle)} --meta '${meta}'`, { encoding: 'utf-8' }))
+      const language = await ad4mClient.languages.publish(resolvePath(bundle), JSON.parse(meta));
       logger.info(`Published language: `, language)
      
-      execSync(`${binaryPath} runtime addTrustedAgent --did "${language.author}"`, { encoding: 'utf-8' })
+      await ad4mClient.runtime.addTrustedAgents([language.author])
 
       global.languageAddress = language.address;
       
       if (languageType === 'linkLanguage') {
-        const templateLanguage = cleanOutput(execSync(`${binaryPath} languages applyTemplateAndPublish --address ${language.address} --templateData '{"uid":"123","name":"test-${language.name}"}'`, { encoding: 'utf-8' }))
+        const templateLanguage = await ad4mClient.languages.applyTemplateAndPublish(language.address, JSON.stringify({uid: '123', name: `test-${language.name}`}));
         logger.info(`Published Template Language: `, templateLanguage)
   
         global.languageAddress = templateLanguage.address;
 
-        const perspective = cleanOutput(execSync(`${binaryPath} perspective add --name "Test perspective"`, { encoding: 'utf-8' }))
+        const perspective = await ad4mClient.perspective.add('Test perspective');
         logger.info(`Perspective created: `, perspective)
       
         global.perspective = perspective.uuid;
 
-        const neighnourhood = cleanOutput(execSync(`${binaryPath} neighbourhood publishFromPerspective --uuid "${perspective.uuid}" --address "${templateLanguage.address}" --meta '{"links":[]}'`, { encoding: 'utf-8' }))
-        logger.info(`Neighbourhood created: `, neighnourhood)
+        const neighbourhood = await ad4mClient.neighbourhood.publishFromPerspective(perspective.uuid, templateLanguage.address, JSON.parse('{"links":[]}'));
+        logger.info(`Neighbourhood created: `, neighbourhood)
         
-        global.neighnourhood = neighnourhood;
+        global.neighnourhood = neighbourhood;
       }
 
       if (ui) {
@@ -78,14 +77,13 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
 
 export function startServer(relativePath: string, bundle: string, meta: string, languageType: string, port: number, defaultLangPath?: string, callback?: any): Promise<any> {
   return new Promise(async (resolve, reject) => {
-    const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
-    fs.removeSync(dataPath)
+    deleteAllAd4mData(relativePath);
     
     await installSystemLanguages(relativePath)
 
-    fs.removeSync(dataPath)
+    deleteAllAd4mData(relativePath);
 
-    const binaryPath = path.join(getAppDataPath(relativePath), 'binary', `ad4m-host-${global.ad4mHostVersion}`);
+    const binaryPath = path.join(ad4mDataDirectory(relativePath), 'binary', `ad4m-host-${global.ad4mHostVersion}`);
 
     await findAndKillProcess('holochain')
     await findAndKillProcess('lair-keystore')
@@ -100,9 +98,9 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
     let child: ChildProcessWithoutNullStreams;
 
     if (defaultLangPath) {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--languageLanguageOnly', 'false'])
+      child = spawn(`${binaryPath}`, ['serve', '--reqCredential', global.ad4mToken, '--dataPath', relativePath, '--port', port.toString(), '--languageLanguageOnly', 'false'])
     } else {
-      child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--languageLanguageOnly', 'false'])
+      child = spawn(`${binaryPath}`, ['serve', '--reqCredential', global.ad4mToken, '--dataPath', relativePath, '--port', port.toString(), '--languageLanguageOnly', 'false'])
     }
 
     const logFile = fs.createWriteStream(path.join(process.cwd(), 'ad4m-test.log'))
@@ -115,7 +113,7 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
     })
 
     child.stdout.on('data', async (data) => {
-      if (data.toString().includes('AD4M init complete')) {
+      if (data.toString().includes('GraphQL server started, Unlock the agent to start holohchain')) {
         installLanguage(child, binaryPath, bundle, meta, languageType, resolve, callback);
       }
     });
@@ -195,6 +193,7 @@ async function run() {
     .argv;
 
   global.hideLogs = args.hideLogs;
+  global.ad4mToken = uuidv4()
 
   const relativePath = args.relativePath || 'ad4m-test';
 
