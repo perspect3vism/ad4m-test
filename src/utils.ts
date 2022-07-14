@@ -118,8 +118,23 @@ export async function getAd4mHostBinary(relativePath: string) {
 }
 
 export function ad4mDataDirectory(override?: string) {
-    if(override)
-        return path.join(homedir(), override)
-    else
-        return path.join(homedir(), '.ad4m')
+  if (override)
+    return path.join(homedir(), override)
+  else
+    return path.join(homedir(), '.ad4m')
+}
+
+export function deleteAllAd4mData(relativePath: string) {
+  const dataPath = ad4mDataDirectory(relativePath)
+
+  const files = fs.readdirSync(dataPath);
+
+  
+  for (const file of files) {
+    const fileDir = path.join(ad4mDataDirectory(relativePath), './', file);
+    
+    if (file !== 'binary') {
+      fs.removeSync(fileDir);
+    }
+  }
 }

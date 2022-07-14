@@ -2,7 +2,7 @@ import { LanguageMetaInput } from "@perspect3vism/ad4m"
 import path from "path";
 import fs from 'fs-extra';
 import { ChildProcessWithoutNullStreams, execSync, spawn } from "child_process";
-import { ad4mDataDirectory, findAndKillProcess, getAd4mHostBinary, logger } from "./utils";
+import { ad4mDataDirectory, deleteAllAd4mData, findAndKillProcess, getAd4mHostBinary, logger } from "./utils";
 import kill from 'tree-kill'
 import { buildAd4mClient } from "./client";
 
@@ -31,8 +31,7 @@ const languagesToPublish = {
 
 export async function installSystemLanguages(relativePath = '') {
   return new Promise(async (resolve, reject) => {
-    const dataPath = path.join(ad4mDataDirectory(relativePath), 'ad4m')
-    fs.removeSync(dataPath)
+    deleteAllAd4mData(relativePath);
     fs.removeSync(path.join(__dirname, 'publishedLanguages'))
     fs.removeSync(path.join(__dirname, 'publishedNeighbourhood'))
     fs.mkdirSync(path.join(__dirname, 'publishedLanguages'))

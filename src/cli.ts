@@ -10,7 +10,7 @@ import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { execSync } from 'child_process';
 import kill from 'tree-kill'
 import { resolve as resolvePath} from 'path'
-import { ad4mDataDirectory, cleanOutput, findAndKillProcess, getAd4mHostBinary, getTestFiles, logger } from './utils.js';
+import { ad4mDataDirectory, cleanOutput, deleteAllAd4mData, findAndKillProcess, getAd4mHostBinary, getTestFiles, logger } from './utils.js';
 import process from 'process';
 import { installSystemLanguages } from './installSystemLanguages.js';
 import { buildAd4mClient } from './client.js';
@@ -77,12 +77,11 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
 
 export function startServer(relativePath: string, bundle: string, meta: string, languageType: string, port: number, defaultLangPath?: string, callback?: any): Promise<any> {
   return new Promise(async (resolve, reject) => {
-    const dataPath = path.join(ad4mDataDirectory(relativePath), 'ad4m')
-    fs.removeSync(dataPath)
+    deleteAllAd4mData(relativePath);
     
     await installSystemLanguages(relativePath)
 
-    fs.removeSync(dataPath)
+    deleteAllAd4mData(relativePath);
 
     const binaryPath = path.join(ad4mDataDirectory(relativePath), 'binary', `ad4m-host-${global.ad4mHostVersion}`);
 
