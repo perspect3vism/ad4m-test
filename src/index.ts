@@ -64,13 +64,27 @@ async function describe(desc: string, fn: () => void) {
   global.tests = tests;
 }
 
+async function executeTest() {
+  const test: any = currIt;
+  for (const before of test.beforeEachs) {
+    await before()
+  }    
+
+  await test.func();
+
+  for (const after of test.afterEachs) {
+    await after()
+  } 
+
+}
+
 export async function runtest() {
   for (const test of global.tests) {
     const { relativePath, bundle, meta, languageType, port, defaultLangPath } = global.config;
 
     currIt = test;
 
-    await startServer(relativePath, bundle!, meta!, languageType!, port, defaultLangPath, test);
+    await startServer(relativePath, bundle!, meta!, languageType!, port, defaultLangPath, executeTest);
   }
 }
 

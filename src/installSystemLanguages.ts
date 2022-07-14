@@ -3,7 +3,7 @@ import getAppDataPath from "appdata-path";
 import path from "path";
 import fs from 'fs-extra';
 import { ChildProcessWithoutNullStreams, execSync, spawn } from "child_process";
-import { cleanOutput, findAndKillProcess, getAd4mHostBinary, logger } from "./utils";
+import { cleanOutput, findAndKillProcess, logger } from "./utils";
 import kill from 'tree-kill'
 
 let seed = {
@@ -67,7 +67,7 @@ export async function installSystemLanguages(relativePath = 'ad4m-test') {
       child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', '4000', '--languageLanguageOnly', 'true'])
     }
 
-    const logFile = fs.createWriteStream(path.join(process.cwd(), 'ad4m-test.txt'))
+    const logFile = fs.createWriteStream(path.join(process.cwd(), 'ad4m-test.log'))
 
     child.stdout.on('data', async (data) => {
       logFile.write(data)

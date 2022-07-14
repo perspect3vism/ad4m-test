@@ -8,3 +8,8 @@ build
 example/src
 bootstrapSeed.json
 ad4m.json
+public/client.js
+public/constructorIcon.js
+public/icon.js
+ad4m-test.log
+ad4m-test.txt

@@ -13,14 +13,21 @@ import { resolve as resolvePath} from 'path'
 import { cleanOutput, findAndKillProcess, getAd4mHostBinary, getTestFiles, logger } from './utils.js';
 import process from 'process';
 import { installSystemLanguages } from './installSystemLanguages.js';
+import { buildAd4mClient } from './client.js';
+import { WebSocket } from 'ws';
+import express from 'express'
 
-async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageType: string, resolve: any, test?: any) { 
+async function installLanguage(child: any, binaryPath: string, bundle: string, meta: string, languageType: string, resolve: any, callback?: any) { 
   const generateAgentResponse = execSync(`${binaryPath} agent generate --passphrase 123456789`, { encoding: 'utf-8' }).match(/did:key:\w+/)
   const currentAgentDid =  generateAgentResponse![0];
   logger.info(`Current Agent did: ${currentAgentDid}`);
 
+  const { ui } = global.config;
+ 
   if (bundle && meta) {
     try {    
+      const ad4mClient = await buildAd4mClient(WebSocket);
+ 
       const language = cleanOutput(execSync(`${binaryPath} languages publish --path ${resolvePath(bundle)} --meta '${meta}'`, { encoding: 'utf-8' }))
       logger.info(`Published language: `, language)
      
@@ -45,21 +52,22 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
         global.neighnourhood = neighnourhood;
       }
 
-      for (const before of test.beforeEachs) {
-        await before()
-      }    
+      if (ui) {
+        const found = await ad4mClient.languages.byAddress(language.address)
+        fs.writeFileSync(path.join(process.cwd(), '/public/icon.js'), found.icon?.code!)  
+        fs.writeFileSync(path.join(process.cwd(), '/public/constructorIcon.js'), found.constructorIcon?.code!)  
+      }
 
-      await test.func();
+      await callback();
 
-      for (const after of test.afterEachs) {
-        await after()
-      } 
-    
-      kill(child.pid!, async () => {
-        await findAndKillProcess('holochain')
-        await findAndKillProcess('lair-keystore')
-        resolve(null);
-      })
+      if (!ui) {
+        kill(child.pid!, async () => {
+          await findAndKillProcess('holochain')
+          await findAndKillProcess('lair-keystore')
+          resolve(null);
+        })
+      }
+
     } catch (err) {
       logger.error(`Error: ${err}`)
     }
@@ -68,7 +76,7 @@ async function installLanguage(child: any, binaryPath: string, bundle: string, m
 }
 
 
-export function startServer(relativePath: string, bundle: string, meta: string, languageType: string, port: number, defaultLangPath?: string, test?: any): Promise<any> {
+export function startServer(relativePath: string, bundle: string, meta: string, languageType: string, port: number, defaultLangPath?: string, callback?: any): Promise<any> {
   return new Promise(async (resolve, reject) => {
     const dataPath = path.join(getAppDataPath(relativePath), 'ad4m')
     fs.removeSync(dataPath)
@@ -97,7 +105,7 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
       child = spawn(`${binaryPath}`, ['serve', '--dataPath', relativePath, '--port', port.toString(), '--languageLanguageOnly', 'false'])
     }
 
-    const logFile = fs.createWriteStream(path.join(process.cwd(), 'ad4m-test.txt'))
+    const logFile = fs.createWriteStream(path.join(process.cwd(), 'ad4m-test.log'))
 
     child.stdout.on('data', async (data) => {
       logFile.write(data)
@@ -108,7 +116,7 @@ export function startServer(relativePath: string, bundle: string, meta: string, 
 
     child.stdout.on('data', async (data) => {
       if (data.toString().includes('AD4M init complete')) {
-        installLanguage(child, binaryPath, bundle, meta, languageType, resolve, test);
+        installLanguage(child, binaryPath, bundle, meta, languageType, resolve, callback);
       }
     });
 
@@ -172,6 +180,11 @@ async function run() {
         describe: 'Hide the ad4m-test logs',
         default: false,
         alias: 'hl'
+      },
+      ui: {
+        type: 'boolean',
+        default: false,
+        describe: 'Starts a live-server with the UI'
       }
     })
     .strict()
@@ -199,28 +212,51 @@ async function run() {
     process.exit(1);
   }
 
+  global.config = {
+    relativePath,
+    bundle: args.bundle,
+    meta: args.meta,
+    languageType: args.languageType,
+    defaultLangPath: args.defaultLangPath,
+    port: args.port,
+    ui: args.ui
+  }
+
   const files = args.test ? [args.test] : getTestFiles();
 
-  if (files) {
-    for (const file of files) {
-      global.config = {
-        relativePath,
-        bundle: args.bundle,
-        meta: args.meta,
-        languageType: args.languageType,
-        defaultLangPath: args.defaultLangPath,
-        port: args.port
-      }
-      
-      await import(fs.realpathSync(file));
-      
-      await runtest()
-    }
-    showTestsResults();
+  if (args.ui) {
+    await startServer(relativePath, args.bundle!, args.meta!, args.languageType!, args.port, args.defaultLangPath, () => {
+      const app = express();
 
+      console.log(process.env.IP)
+
+      app.use('/', express.static(path.join(__dirname, '../public')))
+
+      app.get('/', (req, res) => {
+        res.send('Hello World!');
+      });
+      
+
+      app.listen(8181, () => {
+        logger.info(`Server started at \n 
+          localhost:8181?address=${global.languageAddress} \n
+          localhost:8181/expression.html?address=${global.languageAddress}`)
+      })
+    });
   } else {
-    logger.error('No test files found')
+    if (files) {
+      for (const file of files) {        
+        await import(fs.realpathSync(file));
+        
+        await runtest()
+      }
+      showTestsResults();
+  
+    } else {
+      logger.error('No test files found')
+    }
   }
+
 
   process.exit(0)
 }
